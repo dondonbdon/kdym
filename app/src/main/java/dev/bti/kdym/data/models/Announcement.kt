@@ -6,19 +6,19 @@ data class Announcement(
     val id: String = "",
     val title: String = "",
     val body: String = "",
-    val priority: String = "normal", // normal, important, urgent
-    val audience: String = "everyone", // everyone, campers, leaders, admins, tribe, group
-    val targetRole: String? = null,
+    val priority: AnnouncementPriority = AnnouncementPriority.normal,
+    val audience: AnnouncementAudience = AnnouncementAudience.everyone,
+    val targetRole: UserRole? = null,
     val targetTribeId: String? = null,
     val targetGroupId: String? = null,
     val campId: String? = null,
     val isPublished: Boolean = true,
-    val sendPush: Boolean? = null,
-    val pushSentAt: Timestamp? = null,
-    val pushError: String? = null,
     val createdBy: String? = null,
     val createdByName: String? = null,
     val createdAt: Timestamp? = null,
     val expiresAt: Timestamp? = null,
     val readBy: List<String> = emptyList()
-)
+) {
+    val isExpired: Boolean
+        get() = expiresAt?.let { it.seconds < Timestamp.now().seconds } ?: false
+}

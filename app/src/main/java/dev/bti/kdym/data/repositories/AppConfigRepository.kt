@@ -6,6 +6,8 @@ import dev.bti.kdym.data.models.AppConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+import kotlinx.coroutines.tasks.await
+
 class AppConfigRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
@@ -16,5 +18,12 @@ class AppConfigRepository(
             .map { snapshot ->
                 snapshot.toObject(AppConfig::class.java)
             }
+    }
+
+    suspend fun updateAppConfig(config: AppConfig) {
+        firestore.collection("appConfig")
+            .document("main")
+            .set(config)
+            .await()
     }
 }

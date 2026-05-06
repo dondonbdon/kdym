@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import dev.bti.kdym.ui.theme.Background
 import dev.bti.kdym.ui.theme.CyanGlow
 import dev.bti.kdym.ui.theme.RedGlow
@@ -37,6 +38,34 @@ fun OutpourBackground(
             .background(Background)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            // Draw Grid Mesh
+            val gridSize = 40.dp.toPx()
+            val gridColor = Color.White.copy(alpha = 0.03f)
+            
+            // Vertical lines
+            var x = 0f
+            while (x < size.width) {
+                drawLine(
+                    color = gridColor,
+                    start = Offset(x, 0f),
+                    end = Offset(x, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+                x += gridSize
+            }
+            
+            // Horizontal lines
+            var y = 0f
+            while (y < size.height) {
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+                y += gridSize
+            }
+
             // Cyan Glow at top left
             drawCircle(
                 brush = Brush.radialGradient(

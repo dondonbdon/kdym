@@ -1,62 +1,137 @@
 package dev.bti.kdym.ui.screens.groups
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.bti.kdym.data.models.Group
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.auth.FirebaseAuth
+import dev.bti.kdym.data.models.AppGroup
+import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.ui.components.GroupListCard
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.TextSecondary
+import dev.bti.kdym.viewmodels.GroupsViewModel
 
 @Composable
-fun GroupsScreen() {
-    val mockGroups = listOf(
-        Group(name = "Tribe Wars", description = "Official competition updates", isOfficial = true),
-        Group(name = "Announcements", description = "District-wide news", isOfficial = true),
-        Group(name = "Senior Camp 2026", description = "Private group for campers", isOfficial = false)
+fun GroupsScreen(
+    viewModel: GroupsViewModel = viewModel()
+) {
+
+        println("GroupsViewModel INIT")
+
+    val tribeWars = AppGroup(
+        name = "TRIBE WARS",
+        description = "View live rankings, current scores, and recent point changes.",
+        type = AppGroupType.tribe,
+        isOfficial = false
     )
 
+    val announcements = AppGroup(
+        name = "ANNOUNCEMENTS",
+        description = "Camp alerts, KDYM updates, and leadership messages.",
+        type = AppGroupType.general,
+        isOfficial = false
+    )
+
+
+    val groups by viewModel.groups.collectAsState();
+
     OutpourBackground {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(top = 64.dp, bottom = 140.dp)
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
-            
-            Text(
-                text = "YOUR CHANNELS",
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
-                fontFamily = RubikFontFamily
-            )
-            
-            Text(
-                text = "GROUPS",
-                color = Color.White,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 32.dp)
-            ) {
-                items(mockGroups) { group ->
-                    GroupListCard(group = group)
+            item {
+                // Header Icon
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(Color(0xFFEF4444).copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Forum,
+                        contentDescription = null,
+                        tint = Color(0xFFEF4444),
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "GROUPS",
+                    color = Color.White,
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = RubikFontFamily,
+                    lineHeight = 44.sp
+                )
+
+                Text(
+                    text = "Your tribe, cabin, and leadership groups.",
+                    color = TextSecondary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = RubikFontFamily
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Fixed Cards
+            item {
+                GroupListCard(group = tribeWars)
+            }
+
+            item {
+                GroupListCard(group = announcements)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // Your Channels Section
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "YOUR CHANNELS",
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = RubikFontFamily,
+                    lineHeight = 28.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(groups) { group ->
+                GroupListCard(group = group)
             }
         }
     }

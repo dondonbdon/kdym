@@ -19,7 +19,7 @@ val RubikGlitchFontFamily = FontFamily(
     androidx.compose.ui.text.font.Font(R.font.rubik_glitch_regular, FontWeight.Normal)
 )
 
-val RubikFont = GoogleFont("Rubik")
+val RubikFont = GoogleFont("Quicksand")
 val RubikFontFamily = FontFamily(
     Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Normal),
     Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Medium),
@@ -93,14 +93,14 @@ val Typography = Typography(
         letterSpacing = 0.1.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = RubikFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = RubikFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,

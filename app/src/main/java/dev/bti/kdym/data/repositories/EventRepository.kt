@@ -3,24 +3,24 @@ package dev.bti.kdym.data.repositories
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
-import dev.bti.kdym.data.models.Event
+import dev.bti.kdym.data.models.KDYMEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class EventRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    fun getAllPublishedEvents(): Flow<List<Event>> {
+    fun getAllPublishedEvents(): Flow<List<KDYMEvent>> {
         return firestore.collection("events")
             .whereEqualTo("isPublished", true)
             .orderBy("startDate", Query.Direction.ASCENDING)
             .snapshots()
             .map { snapshot ->
-                snapshot.toObjects(Event::class.java)
+                snapshot.toObjects(KDYMEvent::class.java)
             }
     }
 
-    fun getCampSchedule(campId: String): Flow<List<Event>> {
+    fun getCampSchedule(campId: String): Flow<List<KDYMEvent>> {
         return firestore.collection("events")
             .whereEqualTo("campId", campId)
             .whereEqualTo("isCampEvent", true)
@@ -28,7 +28,7 @@ class EventRepository(
             .orderBy("startDate", Query.Direction.ASCENDING)
             .snapshots()
             .map { snapshot ->
-                snapshot.toObjects(Event::class.java)
+                snapshot.toObjects(KDYMEvent::class.java)
             }
     }
 }

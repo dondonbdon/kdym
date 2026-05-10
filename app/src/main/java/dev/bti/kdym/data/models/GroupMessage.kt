@@ -2,12 +2,10 @@ package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
-import lombok.Getter
-import lombok.Setter
+
 import java.util.UUID
 
-@Getter
-@Setter
+
 data class GroupMessage(
     val id: String = "",
     val groupId: String = "",

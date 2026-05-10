@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -13,19 +12,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.bti.kdym.data.models.FeedPost
-import dev.bti.kdym.ui.components.CommandInputField
-import dev.bti.kdym.ui.components.GlassCard
-import dev.bti.kdym.ui.components.OutpourBackground
-import dev.bti.kdym.ui.components.StandardTopBar
+import dev.bti.kdym.ui.components.*
+import dev.bti.kdym.ui.components.home.FeedPostCard
 import dev.bti.kdym.ui.theme.RubikFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
+import java.text.SimpleDateFormat
 
 @Composable
 fun CommentThreadScreen(
@@ -36,6 +35,8 @@ fun CommentThreadScreen(
     val updates by viewModel.liveUpdates.collectAsState()
     val post = updates.find { it.id == postId } ?: return
     val comments by viewModel.getComments(postId).collectAsState(initial = emptyList())
+    val userReaction by viewModel.getUserReaction(post.id)
+        .collectAsState(initial = null)
     
     var commentText by remember { mutableStateOf("") }
 
@@ -45,11 +46,11 @@ fun CommentThreadScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            StandardTopBar(
+            ScreenHeader(
                 onNavigateBack = onNavigateBack,
                 icon = Icons.Default.ChatBubbleOutline,
-                iconColor = Color(0xFFEF4444),
-                modifier = Modifier.padding(horizontal = 16.dp)
+                title = "THREAD",
+                subtitle = "Post comments and responses."
             )
             
             LazyColumn(
@@ -60,7 +61,14 @@ fun CommentThreadScreen(
                 contentPadding = PaddingValues(top = 24.dp, bottom = 32.dp)
             ) {
                 item {
-                    FeedPostCard(post = post) // Show the original post at the top
+                    FeedPostCard(
+                        post = post,
+                        userReaction = userReaction ?: "",
+                        onReactionClick = { postId, reaction ->
+                            viewModel.toggleReaction(postId, reaction)
+                        },
+                        onClick = { }
+                    )
                 }
                 
                 item {
@@ -82,10 +90,14 @@ fun CommentThreadScreen(
                 }
                 
                 items(comments) { comment ->
+
+                    val formattedTime = SimpleDateFormat("HH:mm", LocalLocale.current.platformLocale)
+                        .format(comment.createdAt.toDate())
+
                     CommentItem(
                         author = comment.createdByName,
                         body = comment.body,
-                        time = "13:16" // Placeholder time logic
+                        time = formattedTime
                     )
                 }
             }
@@ -96,7 +108,6 @@ fun CommentThreadScreen(
                     .fillMaxWidth()
                     .padding(16.dp),
                 cornerRadius = 32.dp,
-                backgroundColor = Color.Black.copy(alpha = 0.5f),
                 contentPadding = 8.dp
             ) {
                 Row(
@@ -108,7 +119,7 @@ fun CommentThreadScreen(
                             value = commentText,
                             onValueChange = { commentText = it },
                             placeholder = "Ask or respond",
-                            icon = Icons.Default.ChatBubbleOutline
+                            null
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -127,7 +138,7 @@ fun CommentThreadScreen(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
                             tint = Color.White.copy(alpha = 0.5f),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp).rotate(-45f)
                         )
                     }
                 }

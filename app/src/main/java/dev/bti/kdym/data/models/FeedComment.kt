@@ -9,7 +9,7 @@ data class FeedComment(
     val createdBy: String = "",
     val createdByName: String = "",
     val createdByRole: String? = null,
-    val createdAt: Timestamp? = null,
+    val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp? = null,
     val deleted: Boolean = false,
     val deletedAt: Timestamp? = null,

@@ -1,6 +1,7 @@
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 
 data class AppGroup(
     val id: String = "",
@@ -11,9 +12,15 @@ data class AppGroup(
     val tribeId: String? = null,
     val memberIds: List<String> = emptyList(),
     val leaderIds: List<String> = emptyList(),
-    val isPublic: Boolean = true,
-    val isOfficial: Boolean = false,
-    val isActive: Boolean = true,
+    @get:PropertyName("isPublic")
+    @set:PropertyName("isPublic")
+    var isPublic: Boolean = true,
+    @get:PropertyName("isOfficial")
+    @set:PropertyName("isOfficial")
+    var isOfficial: Boolean = false,
+    @get:PropertyName("isActive")
+    @set:PropertyName("isActive")
+    var isActive: Boolean = true,
     val chatEnabled: Boolean = true,
     val postingRestrictedToLeaders: Boolean = false,
     val attachmentsRestrictedToLeaders: Boolean = false,

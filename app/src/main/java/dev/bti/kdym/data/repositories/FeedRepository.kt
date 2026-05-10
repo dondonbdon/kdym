@@ -1,5 +1,6 @@
 package dev.bti.kdym.data.repositories
 
+import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,6 +9,7 @@ import com.google.firebase.firestore.snapshots
 import dev.bti.kdym.data.models.FeedComment
 import dev.bti.kdym.data.models.FeedPost
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
@@ -19,20 +21,40 @@ class FeedRepository(
             .whereEqualTo("isPublished", true)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .snapshots()
-            .map { it.toObjects(FeedPost::class.java) }
+            .map { snapshot ->
+                snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(FeedPost::class.java)
+                        ?.copy(id = doc.id)
+                }
+            }
+    }
+
+    suspend fun createPost(post: FeedPost) {
+        val ref = firestore.collection("feedPosts").document()
+        ref.set(post.copy(id = ref.id)).await()
     }
 
     suspend fun addComment(postId: String, comment: FeedComment) {
+        Log.d("FeedRepo", "addComment called with postId=$postId")
+
         val postRef = firestore.collection("feedPosts").document(postId)
         val commentRef = postRef.collection("comments").document()
-        
-        firestore.runTransaction { transaction ->
-            transaction.set(commentRef, comment.copy(id = commentRef.id))
-            transaction.update(postRef, "commentCount", FieldValue.increment(1))
-        }.await()
+
+        try {
+            firestore.runTransaction { transaction ->
+                transaction.set(commentRef, comment.copy(id = commentRef.id))
+                transaction.update(postRef, "commentCount", FieldValue.increment(1))
+            }.await()
+
+            Log.d("FeedRepo", "Comment successfully written")
+        } catch (e: Exception) {
+            Log.e("FeedRepo", "addComment FAILED", e)
+        }
     }
 
     fun getComments(postId: String): Flow<List<FeedComment>> {
+        require(postId.isNotBlank()) { "postId cannot be blank" }
+
         return firestore.collection("feedPosts")
             .document(postId)
             .collection("comments")
@@ -65,6 +87,10 @@ class FeedRepository(
     }
 
     fun getUserReaction(postId: String, userId: String): Flow<String?> {
+        if (postId.isBlank() || userId.isBlank()) {
+            return flowOf(null)
+        }
+
         return firestore.collection("feedPosts")
             .document(postId)
             .collection("userReactions")

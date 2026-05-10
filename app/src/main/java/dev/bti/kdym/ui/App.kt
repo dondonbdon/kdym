@@ -5,7 +5,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.MainNavigation
 import dev.bti.kdym.ui.components.AnimatedSplash
@@ -35,31 +41,41 @@ fun App(viewModel: MainViewModel = viewModel()) {
                 showSplash = false
             }
         } else {
-            if (firebaseUser != null) {
-                MainNavigation()
-            } else {
-                when (currentAuthScreen) {
-                    "welcome" -> WelcomeScreen(
-                        onNavigateToLogin = { currentAuthScreen = "login" },
-                        onNavigateToSignUp = { currentAuthScreen = "signup" },
-                        onNavigateToPlayPreview = { /* TODO */ }
+            val uiState by viewModel.uiState.collectAsState()
+            Column {
+                if (uiState.isLoading && firebaseUser == null) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                        color = Color(0xFFEF4444),
+                        trackColor = Color.Transparent
                     )
-                    "login" -> LoginScreen(
-                        onSignIn = { email, pass -> 
-                            viewModel.signIn(email, pass) { success ->
-                                if (!success) { /* Show error */ }
-                            }
-                        },
-                        onNavigateToSignUp = { currentAuthScreen = "signup" }
-                    )
-                    "signup" -> SignUpScreen(
-                        onSignUp = { name, email, pass ->
-                            viewModel.signUp(name, email, pass) { success ->
-                                if (!success) { /* Show error */ }
-                            }
-                        },
-                        onNavigateToLogin = { currentAuthScreen = "login" }
-                    )
+                }
+                if (firebaseUser != null) {
+                    MainNavigation(viewModel)
+                } else {
+                    when (currentAuthScreen) {
+                        "welcome" -> WelcomeScreen(
+                            onNavigateToLogin = { currentAuthScreen = "login" },
+                            onNavigateToSignUp = { currentAuthScreen = "signup" },
+                            onNavigateToPlayPreview = { /* TODO */ }
+                        )
+                        "login" -> LoginScreen(
+                            onSignIn = { email, pass -> 
+                                viewModel.signIn(email, pass) { success ->
+                                    if (!success) { /* Show error */ }
+                                }
+                            },
+                            onNavigateToSignUp = { currentAuthScreen = "signup" }
+                        )
+                        "signup" -> SignUpScreen(
+                            onSignUp = { name, email, pass ->
+                                viewModel.signUp(name, email, pass) { success ->
+                                    if (!success) { /* Show error */ }
+                                }
+                            },
+                            onNavigateToLogin = { currentAuthScreen = "login" }
+                        )
+                    }
                 }
             }
         }

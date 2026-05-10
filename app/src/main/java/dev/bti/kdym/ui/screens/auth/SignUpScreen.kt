@@ -1,16 +1,37 @@
 package dev.bti.kdym.ui.screens.auth
 
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +39,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.bti.kdym.R
 import dev.bti.kdym.ui.components.CommandInputField
 import dev.bti.kdym.ui.components.GlassCard
@@ -25,141 +48,224 @@ import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.RubikFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
+import dev.bti.kdym.viewmodels.MainViewModel
 
 @Composable
 fun SignUpScreen(
     onSignUp: (String, String, String) -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    viewModel: MainViewModel = viewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    val isLoading by viewModel.authLoading.collectAsState()
+    val authError by viewModel.authError.collectAsState()
+
+    val isNameValid = name.isNotBlank()
+    val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isPasswordValid = password.length >= 6
+    val isFormValid = isNameValid && isEmailValid && isPasswordValid
+
     OutpourBackground {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            Box(
+
+
+
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            Column(
                 modifier = Modifier
-                    .width(40.dp)
-                    .height(4.dp)
-                    .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(2.dp))
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Image(
-                painter = painterResource(id = R.drawable.white_kdym_logo),
-                contentDescription = null,
-                modifier = Modifier.size(80.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "CREATE ACCOUNT",
-                color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
-            )
-            Text(
-                text = "Anyone can create an account. Camp access is unlocked separately by leadership.",
-                color = TextSecondary,
-                fontSize = 16.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                fontFamily = RubikFontFamily
-            )
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            CommandInputField(
-                value = name,
-                onValueChange = { name = it },
-                placeholder = "Full Name",
-                icon = Icons.Default.Person
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            CommandInputField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = "Email",
-                icon = Icons.Default.Email
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            CommandInputField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = "Password",
-                icon = Icons.Default.Lock
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Button(
-                onClick = { onSignUp(name, email, password) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f), contentColor = Color.White.copy(alpha = 0.3f)),
-                shape = RoundedCornerShape(28.dp),
-                enabled = name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painter = painterResource(id = R.drawable.ic_profile_filled), contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "CREATE ACCOUNT", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "Already have an account? Sign in",
-                color = Color(0xFF22D3EE),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = RubikFontFamily,
-                modifier = Modifier.clickable { onNavigateToLogin() }
-            )
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 48.dp),
-                cornerRadius = 24.dp,
-                backgroundColor = Color(0xFFEF4444).copy(alpha = 0.05f),
-                borderColor = Color(0xFFEF4444).copy(alpha = 0.1f)
-            ) {
-                Row(verticalAlignment = Alignment.Top) {
-                    Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = RedAccent, modifier = Modifier.size(16.dp).padding(top = 2.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Camp access is separate",
-                            color = RedAccent,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = RubikFontFamily
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .background(
+                            Color.White.copy(alpha = 0.1f),
+                            RoundedCornerShape(2.dp)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Image(
+                    painter = painterResource(id = R.drawable.white_kdym_logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "CREATE ACCOUNT",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = RubikFontFamily
+                )
+
+                Text(
+                    text = "Anyone can create an account. Camp access is unlocked separately by leadership.",
+                    color = TextSecondary,
+                    fontSize = 16.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    fontFamily = RubikFontFamily
+                )
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                CommandInputField(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        viewModel.clearAuthError()
+                    },
+                    placeholder = "Full Name",
+                    icon = Icons.Default.Person
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CommandInputField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        viewModel.clearAuthError()
+                    },
+                    placeholder = "Email",
+                    icon = Icons.Default.Email
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CommandInputField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        viewModel.clearAuthError()
+                    },
+                    placeholder = "Password",
+                    icon = Icons.Default.Lock
+                )
+
+                if (authError != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = authError!!,
+                        color = RedAccent,
+                        fontSize = 14.sp,
+                        fontFamily = RubikFontFamily,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = { onSignUp(name, email, password) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isFormValid)
+                            Color.White
+                        else
+                            Color.White.copy(alpha = 0.1f),
+                        contentColor = if (isFormValid)
+                            Color.Black
+                        else
+                            Color.White.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(28.dp),
+                    enabled = isFormValid && !isLoading
+                ) {
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_profile_filled),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Creating an account gives access to the general KDYM app. Camp Mode features like tribe groups, camp schedule, and Tribe Wars require approval.",
-                            color = TextSecondary,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp,
+                            text = "CREATE ACCOUNT",
+                            fontWeight = FontWeight.Black,
                             fontFamily = RubikFontFamily
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Already have an account? Sign in",
+                    color = Color(0xFF22D3EE),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = RubikFontFamily,
+                    modifier = Modifier.clickable { onNavigateToLogin() }
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 48.dp),
+                    cornerRadius = 24.dp,
+                    backgroundColor = Color(0xFFEF4444).copy(alpha = 0.05f),
+                    borderColor = Color(0xFFEF4444).copy(alpha = 0.1f)
+                ) {
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = RedAccent,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .padding(top = 2.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Camp access is separate",
+                                color = RedAccent,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = RubikFontFamily
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Creating an account gives access to the general KDYM app. Camp Mode features like tribe groups, camp schedule, and Tribe Wars require approval.",
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                fontFamily = RubikFontFamily
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ✅ TOP LOADING BAR (no layout shift)
+            if (isLoading) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .align(Alignment.TopCenter),
+                    color = RedAccent,
+                    trackColor = Color.White.copy(alpha = 0.1f)
+                )
             }
         }
     }

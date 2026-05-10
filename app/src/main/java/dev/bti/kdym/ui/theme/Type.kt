@@ -19,7 +19,7 @@ val RubikGlitchFontFamily = FontFamily(
     androidx.compose.ui.text.font.Font(R.font.rubik_glitch_regular, FontWeight.Normal)
 )
 
-val RubikFont = GoogleFont("Quicksand")
+val RubikFont = GoogleFont("Inria Sans")
 val RubikFontFamily = FontFamily(
     Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Normal),
     Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Medium),

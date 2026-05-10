@@ -16,7 +16,7 @@ import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.RubikFontFamily
 
 @Composable
-fun EventList(events: List<KDYMEvent>, filter: String) {
+fun EventList(events: List<KDYMEvent>, filter: String, onEventClick: (KDYMEvent) -> Unit) {
 
     if (events.isEmpty()) {
         Text("No events yet...", color = Color.White)
@@ -31,21 +31,22 @@ fun EventList(events: List<KDYMEvent>, filter: String) {
     val grouped = filteredEvents
         .sortedBy { it.startDate }
         .groupBy { event ->
-            event.startDate.toDate()
+            if (filter == "CAMP SCHEDULE") "SCHEDULE"
+            else event.startDate.toDate()
                 .toInstant()
                 .atZone(java.time.ZoneId.systemDefault())
-                .month
+                .month.name
         }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        grouped.forEach { (month, monthEvents) ->
+        grouped.forEach { (header, monthEvents) ->
 
             Column {
 
                 Text(
-                    text = "SCHEDULE",
+                    text = if (filter == "CAMP SCHEDULE") "CAMP" else "SCHEDULE",
                     color = RedAccent,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
@@ -54,7 +55,7 @@ fun EventList(events: List<KDYMEvent>, filter: String) {
                 )
 
                 Text(
-                    text = month?.name ?: "MONTH",
+                    text = header,
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
@@ -63,7 +64,7 @@ fun EventList(events: List<KDYMEvent>, filter: String) {
             }
 
             monthEvents.forEach { event ->
-                EventListCard(event = event)
+                EventListCard(event = event, onClick = { onEventClick(event) })
             }
         }
     }

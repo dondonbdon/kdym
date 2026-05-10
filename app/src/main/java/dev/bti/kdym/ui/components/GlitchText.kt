@@ -24,7 +24,7 @@ import dev.bti.kdym.ui.theme.RubikGlitchFontFamily
 import kotlinx.coroutines.delay
 
 @Composable
-fun GlitchText(text: String) {
+fun GlitchText(text: String, fontSize: TextUnit = 64.sp) {
     var glitchOn by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -59,8 +59,8 @@ fun GlitchText(text: String) {
         Text(
             text = text,
             fontFamily = RubikGlitchFontFamily,
-            fontSize = 64.sp,
-            lineHeight = 64.sp,
+            fontSize = fontSize,
+            lineHeight = fontSize,
             color = Color(0xFFFF6B6B).copy(alpha = 0.5f * redAlpha),
             modifier = Modifier.offset(
                 x = (2 * redAlpha).dp,
@@ -72,8 +72,8 @@ fun GlitchText(text: String) {
         Text(
             text = text,
             fontFamily = RubikGlitchFontFamily,
-            fontSize = 64.sp,
-            lineHeight = 64.sp,
+            fontSize = fontSize,
+            lineHeight = fontSize,
             color = Color.White,
             modifier = Modifier.offset(
                 x = offsetX.dp,

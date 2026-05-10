@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Transparent
 
 private val KdymColorScheme = darkColorScheme(
     primary = RedAccent,
@@ -13,10 +14,11 @@ private val KdymColorScheme = darkColorScheme(
     tertiary = Amber,
     background = Background,
     surface = DeepBackground,
-    onBackground = TextPrimary,
+    onBackground = Transparent,
     onSurface = TextPrimary,
     onSurfaceVariant = TextSecondary,
-    outline = CardBorder
+    outline = CardBorder,
+
 )
 
 @Composable

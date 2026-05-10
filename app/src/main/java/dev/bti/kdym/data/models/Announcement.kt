@@ -1,6 +1,7 @@
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 
 data class Announcement(
     val id: String = "",
@@ -12,7 +13,9 @@ data class Announcement(
     val targetTribeId: String? = null,
     val targetGroupId: String? = null,
     val campId: String? = null,
-    val isPublished: Boolean = true,
+    @get:PropertyName("isPublished")
+    @set:PropertyName("isPublished")
+    var isPublished: Boolean = true,
     val createdBy: String? = null,
     val createdByName: String? = null,
     val createdAt: Timestamp? = null,

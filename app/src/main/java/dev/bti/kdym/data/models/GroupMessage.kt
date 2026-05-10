@@ -1,8 +1,13 @@
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
+import lombok.Getter
+import lombok.Setter
 import java.util.UUID
 
+@Getter
+@Setter
 data class GroupMessage(
     val id: String = "",
     val groupId: String = "",
@@ -20,7 +25,9 @@ data class GroupMessage(
     val deleted: Boolean = false,
     val deletedAt: Timestamp? = null,
     val deletedBy: String? = null,
-    val isSystemMessage: Boolean = false,
+    @get:PropertyName("isSystemMessage")
+    @set:PropertyName("isSystemMessage")
+    var isSystemMessage: Boolean = false,
     val promoteToHome: Boolean = false,
     val promotedFeedPostId: String? = null,
     val promotedAt: Timestamp? = null,

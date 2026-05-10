@@ -1,6 +1,7 @@
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 
 data class AppUser(
     val uid: String = "",
@@ -21,8 +22,12 @@ data class AppUser(
     val requestedRole: String? = null,
     val requestedAt: Timestamp? = null,
 
-    val isAdmin: Boolean = false,
-    val isLeader: Boolean = false,
+    @get:PropertyName("isAdmin")
+    @set:PropertyName("isAdmin")
+    var isAdmin: Boolean = false,
+    @get:PropertyName("isLeader")
+    @set:PropertyName("isLeader")
+    var isLeader: Boolean = false,
 
     val fcmTokens: List<String>? = emptyList(),
     val notificationPreferences: NotificationPreferences? = NotificationPreferences(),
@@ -47,9 +52,8 @@ data class AppUser(
         }
 
     val hasApprovedCampAccess: Boolean
-        get() = accessStatus == "approved" &&
-                listOf("camper", "tribeLeader", "groupLeader", "staff", "admin", "superAdmin").contains(role)
+        get() = accessStatus == "approved" && roleEnum.canAccessCampContent
 
     val hasCommandAccess: Boolean
-        get() = role == "admin" || role == "superAdmin" || role == "staff" || isAdmin || email == "don@don.don"
+        get() = roleEnum.canAccessCommand || isAdmin || email == "don@don.don"
 }

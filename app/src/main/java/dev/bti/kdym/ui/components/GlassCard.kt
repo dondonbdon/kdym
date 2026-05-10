@@ -20,7 +20,7 @@ import dev.bti.kdym.ui.theme.CardBorder
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 24.dp,
+    cornerRadius: Dp = 32.dp,
     borderWidth: Dp = 1.dp,
     borderColor: Color = CardBorder,
     backgroundColor: Color = CardBackground,

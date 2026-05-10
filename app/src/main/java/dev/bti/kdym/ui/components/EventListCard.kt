@@ -28,16 +28,21 @@ import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.RubikFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
+import androidx.compose.foundation.clickable
+
 @Composable
 fun EventListCard(
     event: KDYMEvent,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val accentColor = if (event.isCampEvent) Color(0xFF22D3EE) else RedAccent
+    
     GlassCard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable { onClick() },
         backgroundColor = Color.Black.copy(alpha = 0.3f),
-        cornerRadius = 24.dp
+        cornerRadius = 24.dp,
+        borderColor = accentColor.copy(alpha = 0.1f)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
 
@@ -69,7 +74,7 @@ fun EventListCard(
 
                 Text(
                     text = zoned.dayOfWeek.name.take(3),
-                    color = Color(0xFF22D3EE),
+                    color = accentColor,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = RubikFontFamily
@@ -87,7 +92,7 @@ fun EventListCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = event.category.title.uppercase(),
-                        color = RedAccent,
+                        color = accentColor,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
@@ -111,7 +116,7 @@ fun EventListCard(
                 event.subtitle?.let {
                     Text(
                         text = it,
-                        color = RedAccent,
+                        color = accentColor.copy(alpha = 0.8f),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Black,
                         fontFamily = RubikFontFamily

@@ -4,19 +4,44 @@ enum class UserRole(val title: String) {
     `public`("Public"),
     pending("Pending"),
     camper("Camper"),
-    tribeLeader("Tribe Leader"),
-    groupLeader("Group Leader"),
-    staff("Staff"),
-    admin("Admin"),
-    superAdmin("Super Admin");
+    pointManager("Point Manager"),
+    leader("Leader"),
+    admin("Admin");
+
+    val canAccessCommand: Boolean
+        get() = this == admin || this == leader || this == pointManager
+
+    val canManageCampSettings: Boolean
+        get() = this == admin
+
+    val canManageApprovals: Boolean
+        get() = this == admin || this == leader
+
+    val canManageTribes: Boolean
+        get() = this == admin || this == leader
+
+    val canManagePoints: Boolean
+        get() = this == admin || this == leader || this == pointManager
+
+    val canManageAnnouncements: Boolean
+        get() = this == admin || this == leader
+
+    val canManageGroups: Boolean
+        get() = this == admin || this == leader
+
+    val canManageEvents: Boolean
+        get() = this == admin || this == leader
+
+    val canManagePlay: Boolean
+        get() = this == admin || this == leader
+
+    val canAccessCampContent: Boolean
+        get() = this == admin || this == leader || this == pointManager || this == camper
 
     companion object {
-        val publicUser: UserRole
-            get() {
-                TODO()
-            }
+        val publicUser: UserRole = `public`
 
-        fun fromString(value: String?): UserRole = entries.find { it.name == value } ?: `public`
+        fun fromString(value: String?): UserRole = entries.find { it.name.equals(value, ignoreCase = true) } ?: `public`
     }
 }
 

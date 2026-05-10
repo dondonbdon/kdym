@@ -1,4 +1,5 @@
 [versions]
+accompanistSystemuicontroller = "0.36.0"
 agp = "9.2.0"
 coreKtx = "1.18.0"
 coreSplashscreen = "1.2.0"
@@ -9,6 +10,7 @@ lifecycleRuntimeKtx = "2.10.0"
 lifecycleViewmodelCompose = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.21"
+ksp = "2.3.7"
 composeBom = "2026.04.01"
 firebaseAi = "17.11.0"
 googleGmsGoogleServices = "4.4.4"
@@ -19,6 +21,8 @@ googleid = "1.2.0"
 firebaseFirestore = "26.2.0"
 firebaseStorage = "22.0.1"
 firebaseMessaging = "25.0.1"
+hilt = "2.59.2"
+lombok = "1.18.46"
 navigationCompose = "2.9.8"
 coilCompose = "2.7.0"
 googleFonts = "1.11.0"
@@ -27,7 +31,10 @@ runtime = "1.11.0"
 animationCore = "1.11.0"
 
 [libraries]
-
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
+accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -58,9 +65,11 @@ androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
-
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

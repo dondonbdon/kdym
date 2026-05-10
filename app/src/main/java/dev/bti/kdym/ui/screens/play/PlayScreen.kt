@@ -15,101 +15,115 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.R
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
+import dev.bti.kdym.ui.components.ScreenHeader
 import dev.bti.kdym.ui.components.SegmentedControl
 import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.RubikFontFamily
 import dev.bti.kdym.ui.theme.RubikGlitchFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
+import dev.bti.kdym.viewmodels.MainViewModel
 
 @Composable
-fun PlayScreen() {
+fun PlayScreen(
+    viewModel: MainViewModel = viewModel()
+) {
     var selectedSegment by remember { mutableStateOf("VIDEOS") }
+    val appConfig by viewModel.appConfig.collectAsState()
+    val isCampMode = appConfig?.campModeEnabled ?: false
 
     OutpourBackground {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            contentPadding = PaddingValues(bottom = 140.dp)
         ) {
+            ScreenHeader(isPrimary = true, isCampMode = isCampMode)
 
-            // Header and Segmented Control are now part of the scrolling list
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                PlayTopBar()
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                contentPadding = PaddingValues(bottom = 140.dp)
+            ) {
 
-            item {
-                SegmentedControl(
-                    segments = listOf("VIDEOS", "AUDIO", "GALLERY"),
-                    selectedSegment = selectedSegment,
-                    onSegmentSelected = { selectedSegment = it }
-                )
-            }
-
-            // Dynamic content based on the selected segment
-            when (selectedSegment) {
-                "VIDEOS" -> {
-                    item {
-                        FeaturedMediaCard()
-                    }
-
-                    item {
-                        SectionHeader(
-                            label = "SHORTFORM",
-                            title = "REELS & MOMENTS"
-                        )
-                    }
-
-                    item {
-                        NoContentCard(
-                            icon = Icons.Default.PlayCircle,
-                            message = "No videos yet",
-                            description = "Admins can post vertical videos, recaps, and clips from their gallery."
-                        )
-                    }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    PlayTopBar()
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                "AUDIO" -> {
-                    item {
-                        FeaturedMediaCard()
-                    }
-
-                    item {
-                        SectionHeader(
-                            label = "AUDIO ARCHIVE",
-                            title = "LISTEN AGAIN"
-                        )
-                    }
-
-                    item {
-                        NoContentCard(
-                            icon = Icons.Default.Audiotrack,
-                            message = "No audio yet",
-                            description = "Admins can post audio recordings, messages, and archive tracks."
-                        )
-                    }
+                item {
+                    SegmentedControl(
+                        segments = listOf("VIDEOS", "AUDIO", "GALLERY"),
+                        selectedSegment = selectedSegment,
+                        onSegmentSelected = { selectedSegment = it }
+                    )
                 }
 
-                "GALLERY" -> {
-                    item {
-                        SectionHeader(
-                            label = "GALLERY",
-                            title = "PHOTO DROPS"
-                        )
+                // Dynamic content based on the selected segment
+                when (selectedSegment) {
+                    "VIDEOS" -> {
+                        item {
+                            FeaturedMediaCard()
+                        }
+
+                        item {
+                            SectionHeader(
+                                label = "SHORTFORM",
+                                title = "REELS & MOMENTS"
+                            )
+                        }
+
+                        item {
+                            NoContentCard(
+                                icon = Icons.Default.PlayCircle,
+                                message = "No videos yet",
+                                description = "Admins can post vertical videos, recaps, and clips from their gallery."
+                            )
+                        }
                     }
 
-                    item {
-                        NoContentCard(
-                            icon = Icons.Default.PhotoLibrary,
-                            message = "No photos yet",
-                            description = "Admins can upload full albums and high-quality photo drops."
-                        )
+                    "AUDIO" -> {
+                        item {
+                            FeaturedMediaCard()
+                        }
+
+                        item {
+                            SectionHeader(
+                                label = "AUDIO ARCHIVE",
+                                title = "LISTEN AGAIN"
+                            )
+                        }
+
+                        item {
+                            NoContentCard(
+                                icon = Icons.Default.Audiotrack,
+                                message = "No audio yet",
+                                description = "Admins can post audio recordings, messages, and archive tracks."
+                            )
+                        }
+                    }
+
+                    "GALLERY" -> {
+                        item {
+                            SectionHeader(
+                                label = "GALLERY",
+                                title = "PHOTO DROPS"
+                            )
+                        }
+
+                        item {
+                            NoContentCard(
+                                icon = Icons.Default.PhotoLibrary,
+                                message = "No photos yet",
+                                description = "Admins can upload full albums and high-quality photo drops."
+                            )
+                        }
                     }
                 }
             }

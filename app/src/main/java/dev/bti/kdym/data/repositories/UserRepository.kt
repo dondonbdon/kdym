@@ -54,6 +54,13 @@ class UserRepository(
             .await()
     }
 
+    suspend fun updateUser(uid: String, updates: Map<String, Any?>) {
+        firestore.collection("users")
+            .document(uid)
+            .update(updates + ("updatedAt" to Timestamp.now()))
+            .await()
+    }
+
     suspend fun updateNotificationPreferences(
         uid: String,
         prefs: NotificationPreferences

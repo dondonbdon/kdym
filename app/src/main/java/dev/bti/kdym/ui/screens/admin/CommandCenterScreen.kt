@@ -1,5 +1,6 @@
 package dev.bti.kdym.ui.screens.admin
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,9 +11,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -23,9 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.data.models.AppUser
-import dev.bti.kdym.ui.components.CommandActionCard
+import dev.bti.kdym.data.models.UserRole
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
+import dev.bti.kdym.ui.components.ScreenHeader
 import dev.bti.kdym.ui.theme.RubikFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
@@ -34,106 +43,88 @@ import dev.bti.kdym.viewmodels.MainViewModel
 fun CommandCenterScreen(
     onNavigateToHub: () -> Unit,
     onNavigateToAnnouncements: () -> Unit,
-    onNavigateToNotificationPrefs: () -> Unit,
     onNavigateToTribeWars: () -> Unit,
-    onNavigateToAccessStatus: () -> Unit,
     onNavigateToProfile: () -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
     val user by viewModel.user.collectAsState()
+    val appConfig by viewModel.appConfig.collectAsState()
+    val isCampMode = appConfig?.campModeEnabled ?: false
 
     OutpourBackground {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "COMMAND",
-                color = Color.White,
-                fontSize = 44.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
-            )
-            Text(
-                text = "Admin and leadership controls.",
-                color = TextSecondary,
-                fontSize = 18.sp,
-                fontFamily = RubikFontFamily
+            ScreenHeader(
+                title = "COMMAND",
+                subtitle = "Admin and leadership controls.",
+                icon = Icons.Default.Tune
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
 
-            ProfileHeader(user)
+                ProfileHeader(user)
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            CommandActionCard(
-                icon = Icons.Default.Tune,
-                iconColor = Color(0xFFEF4444),
-                title = "Command Center",
-                subtitle = "Manage camp mode, users, tribes, events, scoring, groups, and media.",
-                onClick = onNavigateToHub
-            )
+                val role = user?.roleEnum ?: UserRole.`public`
 
-            Spacer(modifier = Modifier.height(12.dp))
+                if (role.canAccessCommand) {
+                    CommandActionCard(
+                        icon = Icons.Default.Tune,
+                        iconColor = Color(0xFFEF4444),
+                        title = "Command Center",
+                        subtitle = "Manage camp mode, users, tribes, events, scoring, groups, and media.",
+                        onClick = onNavigateToHub
+                    )
 
-            CommandActionCard(
-                icon = Icons.Default.Campaign,
-                iconColor = Color(0xFF22D3EE),
-                title = "Announcements",
-                subtitle = "Camp alerts, KDYM updates, and leadership messages.",
-                onClick = onNavigateToAnnouncements
-            )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                CommandActionCard(
+                    icon = Icons.Default.Campaign,
+                    iconColor = Color(0xFF22D3EE),
+                    title = "Announcements",
+                    subtitle = "Camp alerts, KDYM updates, and leadership messages.",
+                    onClick = onNavigateToAnnouncements
+                )
 
-            CommandActionCard(
-                icon = Icons.Default.NotificationsActive,
-                iconColor = Color(0xFF22D3EE),
-                title = "Notification Preferences",
-                subtitle = "Choose what KDYM can alert you about.",
-                onClick = onNavigateToNotificationPrefs
-            )
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
+                if (role.canAccessCampContent && isCampMode) {
+                    CommandActionCard(
+                        icon = Icons.Default.Flag,
+                        iconColor = Color(0xFFEAB308),
+                        title = "Tribe Wars",
+                        subtitle = "Live scoreboard and recent score updates.",
+                        onClick = onNavigateToTribeWars
+                    )
 
-            CommandActionCard(
-                icon = Icons.Default.Flag,
-                iconColor = Color(0xFF22D3EE),
-                title = "Tribe Wars",
-                subtitle = "Live scoreboard and recent score updates.",
-                onClick = onNavigateToTribeWars
-            )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                
+                CommandActionCard(
+                    icon = Icons.Default.Settings,
+                    iconColor = Color.White,
+                    title = "Profile & Settings",
+                    subtitle = "Edit profile, account details, and preferences.",
+                    onClick = onNavigateToProfile
+                )
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-            CommandActionCard(
-                icon = Icons.Default.Person,
-                iconColor = Color(0xFF22D3EE),
-                title = "Access Status",
-                subtitle = user?.accessStatus ?: "Public Account",
-                onClick = onNavigateToAccessStatus
-            )
+                SignOutButton(onSignOut = { viewModel.signOut() })
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CommandActionCard(
-                icon = Icons.Default.Settings,
-                iconColor = Color(0xFF22D3EE),
-                title = "Profile & Settings",
-                subtitle = "Edit profile, account details, and preferences.",
-                onClick = onNavigateToProfile
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            SignOutButton(onSignOut = { viewModel.signOut() })
-
-            Spacer(modifier = Modifier.height(140.dp))
+                Spacer(modifier = Modifier.height(140.dp))
+            }
         }
     }
 }
@@ -142,15 +133,19 @@ fun CommandCenterScreen(
 fun ProfileHeader(user: AppUser?) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        backgroundColor = Color.Black.copy(alpha = 0.3f),
-        contentPadding = 20.dp
+        backgroundColor = Color.White.copy(alpha = 0.05f),
+        contentPadding = 24.dp,
+        cornerRadius = 32.dp,
+        borderColor = Color.White.copy(alpha = 0.1f)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(80.dp)
                     .background(
-                        Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFF22D3EE))),
+                        Brush.linearGradient(
+                            listOf(Color(0xFFEF4444), Color(0xFF22D3EE))
+                        ),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -166,11 +161,11 @@ fun ProfileHeader(user: AppUser?) {
 
             Spacer(modifier = Modifier.width(20.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = user?.displayName ?: "KDYM Member",
                     color = Color.White,
-                    fontSize = 20.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = RubikFontFamily
                 )
@@ -180,14 +175,15 @@ fun ProfileHeader(user: AppUser?) {
                     fontSize = 14.sp,
                     fontFamily = RubikFontFamily
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Surface(
-                    color = Color.White.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp)
+                    color = Color(0xFFEF4444).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.2f))
                 ) {
                     Text(
                         text = user?.roleEnum?.title?.uppercase() ?: "public",
-                        color = Color.White,
+                        color = Color(0xFFEF4444),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp,
@@ -196,6 +192,13 @@ fun ProfileHeader(user: AppUser?) {
                     )
                 }
             }
+            
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.2f),
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
@@ -268,7 +271,7 @@ fun SignOutButton(onSignOut: () -> Unit) {
             .clickable { onSignOut() },
         color = Color.White.copy(alpha = 0.05f),
         shape = RoundedCornerShape(28.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),

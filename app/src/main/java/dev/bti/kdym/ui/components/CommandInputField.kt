@@ -23,7 +23,7 @@ fun CommandInputField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    icon: ImageVector,
+    icon: ImageVector?,
     modifier: Modifier = Modifier
 ) {
     BasicTextField(
@@ -46,12 +46,14 @@ fun CommandInputField(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxSize()
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color(0xFF22D3EE).copy(alpha = 0.8f),
-                    modifier = Modifier.size(20.dp)
-                )
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color(0xFF22D3EE).copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(12.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     if (value.isEmpty()) {

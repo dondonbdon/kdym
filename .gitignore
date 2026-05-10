@@ -6,9 +6,15 @@ build/
 # Local configuration
 local.properties
 
+# Firebase / Google Services (CRITICAL: Hide these)
+app/google-services.json
+google-services.json
+
 # Signing (NEVER commit these)
 *.jks
 *.keystore
+release.keystore
+app/release.keystore
 
 # Android Studio / IntelliJ
 .idea/
@@ -20,3 +26,7 @@ captures/
 /app/build/
 *.apk
 *.aab
+
+# OS specific
+.DS_Store
+Thumbs.db

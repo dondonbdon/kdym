@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.data.models.AppGroup
 import dev.bti.kdym.data.models.AppGroupType
@@ -39,8 +40,8 @@ fun CommunityScreen(
     onExploreGroups: () -> Unit,
     onCreateGroup: () -> Unit,
     onAddScore: () -> Unit = {},
-    viewModel: GroupsViewModel = viewModel(),
-    mainViewModel: MainViewModel = viewModel(),
+    viewModel: GroupsViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel(),
     adminViewModel: AdminViewModel
 ) {
     var selectedTab by remember { mutableStateOf("GROUPS") }
@@ -71,7 +72,6 @@ fun CommunityScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(bottom = padding.calculateBottomPadding())
             ) {
                 // Community Header
                 ScreenHeader(

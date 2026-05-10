@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +48,7 @@ jobs:
           packageName: dev.bti.kdym
           releaseFiles: app/build/outputs/bundle/release/*.aab
           track: internal
-          status: draft
+          status: draft #completed
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

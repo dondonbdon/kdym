@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,13 +30,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import dev.bti.kdym.ui.App
 import dev.bti.kdym.ui.components.GlassNavigationBar
 import dev.bti.kdym.ui.screens.admin.*
 import dev.bti.kdym.ui.screens.events.EventDetailScreen
@@ -49,6 +49,7 @@ import dev.bti.kdym.viewmodels.AdminViewModel
 import dev.bti.kdym.viewmodels.GroupsViewModel
 import dev.bti.kdym.viewmodels.MainViewModel
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
@@ -62,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KdymTheme {
-                App(mainViewModel)
+                MainNavigation(mainViewModel)
             }
         }
     }
@@ -91,8 +92,10 @@ fun FeedbackBanner(message: String, isError: Boolean) {
 @Composable
 fun MainNavigation(mainViewModel: MainViewModel) {
     val navController = rememberNavController()
-    val groupsViewModel: GroupsViewModel = viewModel()
-    val adminViewModel: AdminViewModel = viewModel()
+
+    // Initializing ViewModels with Hilt for proper dependency injection
+    val groupsViewModel: GroupsViewModel = hiltViewModel()
+    val adminViewModel: AdminViewModel = hiltViewModel()
 
     val user by mainViewModel.user.collectAsState()
     val uiState by mainViewModel.uiState.collectAsState()
@@ -115,17 +118,16 @@ fun MainNavigation(mainViewModel: MainViewModel) {
 
     Scaffold(
         topBar = {
-            val loadingState by mainViewModel.uiState.collectAsState()
             Column(modifier = Modifier.statusBarsPadding()) {
-                if (loadingState.isLoading) {
+                if (uiState.isLoading) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth(),
                         color = Color(0xFFEF4444),
                         trackColor = Color.Transparent
                     )
                 }
-                loadingState.feedbackMessage?.let { message ->
-                    FeedbackBanner(message = message, isError = loadingState.isError)
+                uiState.feedbackMessage?.let { message ->
+                    FeedbackBanner(message = message, isError = uiState.isError)
                 }
             }
         },
@@ -141,7 +143,9 @@ fun MainNavigation(mainViewModel: MainViewModel) {
             startDestination = "home",
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = if (currentRoute in items.map { it.route }) 0.dp else paddingValues.calculateBottomPadding())
+                // Set to 0.dp so backgrounds bleed behind the GlassNavigationBar.
+                // Each screen handles its own internal content padding.
+                .padding(bottom = 0.dp)
         ) {
             composable("home") {
                 HomeScreen(
@@ -157,19 +161,27 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 )
             }
             composable("play") { PlayScreen(viewModel = mainViewModel) }
-            composable("community") { 
+            composable("community") {
+
+                val groupsViewModel: GroupsViewModel = hiltViewModel()
+                val adminViewModel: AdminViewModel = hiltViewModel()
+
                 CommunityScreen(
                     onNavigateToChat = { groupId -> navController.navigate("chat/$groupId") },
                     onNavigateToAnnouncements = { navController.navigate("announcements") },
                     onNavigateToTribeWars = { navController.navigate("tribe_wars_admin") },
                     onExploreGroups = { navController.navigate("explore_groups") },
                     onCreateGroup = { navController.navigate("create_group") },
+                    onAddScore = { navController.navigate("tribe_wars_admin") },
                     mainViewModel = mainViewModel,
                     viewModel = groupsViewModel,
                     adminViewModel = adminViewModel
-                ) 
+                )
             }
             composable("explore_groups") {
+
+                val groupsViewModel: GroupsViewModel = hiltViewModel()
+
                 ExploreGroupsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     viewModel = groupsViewModel
@@ -212,7 +224,6 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 )
             }
 
-            // Command Navigation Group
             composable("command") {
                 if (user?.hasCommandAccess == true) {
                     CommandCenterScreen(
@@ -243,12 +254,12 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
 
-            composable("camp_settings") { 
+            composable("camp_settings") {
                 if (user?.roleEnum?.canManageCampSettings == true) {
                     CampSettingsScreen(onNavigateBack = { navController.popBackStack() }, viewModel = adminViewModel)
                 }
             }
-            composable("approvals") { 
+            composable("approvals") {
                 if (user?.roleEnum?.canManageApprovals == true) {
                     ApprovalsScreen(onNavigateBack = { navController.popBackStack() }, viewModel = adminViewModel)
                 }
@@ -283,7 +294,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     )
                 }
             }
-            composable("create_tribe") { 
+            composable("create_tribe") {
                 if (user?.roleEnum?.canManageTribes == true) {
                     CreateTribeScreen(onNavigateBack = { navController.popBackStack() }, viewModel = adminViewModel)
                 }
@@ -297,19 +308,10 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                         viewModel = adminViewModel)
                 }
             }
-            composable("create_group?groupId={groupId}") { backStackEntry ->
+            composable("create_group") {
                 if (user?.roleEnum?.canManageGroups == true) {
-                    val groupId = backStackEntry.arguments?.getString("groupId")
                     CreateGroupScreen(
                         onNavigateBack = { navController.popBackStack() },
-                        viewModel = adminViewModel
-                    )
-                }
-            }
-            composable("create_group") { 
-                if (user?.roleEnum?.canManageGroups == true) {
-                    CreateGroupScreen(
-                        onNavigateBack = { navController.popBackStack() }, 
                         viewModel = adminViewModel
                     )
                 }
@@ -340,8 +342,10 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     CreateTribeEventScreen(onNavigateBack = { navController.popBackStack() }, viewModel = adminViewModel)
                 }
             }
-            composable("notification_prefs") { NotificationPreferencesScreen(onNavigateBack = { navController.popBackStack() }, viewModel = mainViewModel) }
-            composable("announcements") { 
+            composable("notification_prefs") {
+                NotificationPreferencesScreen(onNavigateBack = { navController.popBackStack() }, viewModel = mainViewModel)
+            }
+            composable("announcements") {
                 if (user?.roleEnum?.canManageAnnouncements == true) {
                     AnnouncementsScreen(onNavigateBack = { navController.popBackStack() }, mainViewModel = mainViewModel, adminViewModel = adminViewModel)
                 }

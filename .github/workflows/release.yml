@@ -22,11 +22,11 @@ jobs:
       - name: Decode Keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
 
-      # Recreates the Firebase config file that is now in .gitignore
+      # Recreates the Firebase config file
       - name: Decode Google Services JSON
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
 
-      # Build the signed AAB using the decoded files and secrets
+      # Build the signed AAB
       - name: Build Release Bundle
         run: ./gradlew bundleRelease
         env:
@@ -40,7 +40,8 @@ jobs:
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
-          serviceAccountJsonKeyData: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          # CORRECTED PARAMETER NAME
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           packageName: dev.bti.kdym
           releaseFiles: app/build/outputs/bundle/release/*.aab
           track: internal
@@ -55,7 +56,6 @@ jobs:
           body: |
             Automated Release for ${{ github.ref_name }}
             - Built from Run: ${{ github.run_number }}
-            - Includes signed AAB for manual installation or backup.
           draft: false
           prerelease: false
         env:

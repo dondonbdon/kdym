@@ -16,17 +16,24 @@ import dev.bti.kdym.ui.theme.Background
 import dev.bti.kdym.ui.theme.CyanGlow
 import dev.bti.kdym.ui.theme.RedGlow
 
+/**
+ * Animated "Outpour" themed background used as the base layer for most screens.
+ * Features a digital grid mesh and pulsating radial gradients (Cyan and Red).
+ *
+ * @param content Composable UI to be rendered on top of the background.
+ */
 @Composable
 fun OutpourBackground(
+    gridAlpha: Float = 0.005f,
     content: @Composable () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "backgroundPulse")
     
     val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1.0f,
+        initialValue = 0.5f,
+        targetValue = 0.9f,
         animationSpec = infiniteRepeatable(
-            animation = tween(4000, easing = LinearEasing),
+            animation = tween(5000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseAlpha"
@@ -39,8 +46,8 @@ fun OutpourBackground(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Draw Grid Mesh
-            val gridSize = 40.dp.toPx()
-            val gridColor = Color.White.copy(alpha = 0.03f)
+            val gridSize = 44.dp.toPx()
+            val gridColor = Color.White.copy(alpha = gridAlpha)
             
             // Vertical lines
             var x = 0f
@@ -49,7 +56,7 @@ fun OutpourBackground(
                     color = gridColor,
                     start = Offset(x, 0f),
                     end = Offset(x, size.height),
-                    strokeWidth = 1.dp.toPx()
+                    strokeWidth = 0.5.dp.toPx()
                 )
                 x += gridSize
             }
@@ -61,7 +68,7 @@ fun OutpourBackground(
                     color = gridColor,
                     start = Offset(0f, y),
                     end = Offset(size.width, y),
-                    strokeWidth = 1.dp.toPx()
+                    strokeWidth = 0.5.dp.toPx()
                 )
                 y += gridSize
             }
@@ -70,22 +77,22 @@ fun OutpourBackground(
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(CyanGlow.copy(alpha = pulseAlpha), Color.Transparent),
-                    center = Offset(size.width * 0.15f, size.height * 0.1f),
-                    radius = size.width * 0.8f
+                    center = Offset(size.width * 0.1f, size.height * 0.1f),
+                    radius = size.width * 1.2f
                 ),
-                center = Offset(size.width * 0.15f, size.height * 0.1f),
-                radius = size.width * 0.8f
+                center = Offset(size.width * 0.1f, size.height * 0.1f),
+                radius = size.width * 1.2f
             )
             
             // Red Glow at bottom right
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(RedGlow.copy(alpha = pulseAlpha), Color.Transparent),
-                    center = Offset(size.width * 0.85f, size.height * 0.9f),
-                    radius = size.width * 0.9f
+                    center = Offset(size.width * 0.9f, size.height * 0.9f),
+                    radius = size.width * 1.3f
                 ),
-                center = Offset(size.width * 0.85f, size.height * 0.9f),
-                radius = size.width * 0.9f
+                center = Offset(size.width * 0.9f, size.height * 0.9f),
+                radius = size.width * 1.3f
             )
         }
         

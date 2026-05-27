@@ -4,15 +4,11 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -20,14 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,49 +53,36 @@ data class WelcomeOnboardingPage(
 @Composable
 fun WelcomeScreen(
     onNavigateToLogin: () -> Unit,
-    onNavigateToSignUp: () -> Unit,
-    onNavigateToPlayPreview: () -> Unit
+    onNavigateToSignUp: () -> Unit
 ) {
     val pages = remember {
         listOf(
             WelcomeOnboardingPage(
-                eyebrow = "2026 DISTRICT THEME",
+                eyebrow = "KDYM OUTPOUR",
                 title = "HEARTLAND",
                 glitchTitle = "OUTPOUR",
-                subtitle = "The official digital home for Kansas District Youth Ministries — built for rallies, camp, events, Play media, announcements, and the move of God across this generation.",
+                subtitle = "The official digital home for Kansas District Youth Ministries.",
                 icon = Icons.Default.LocalFireDepartment,
                 accent = RedAccent,
-                features = listOf(
-                    WelcomeFeature(Icons.Default.AutoAwesome, "Theme-driven", "Heartland Outpour at the center"),
-                    WelcomeFeature(Icons.Default.PlayCircleFilled, "Play media", "Messages, recaps, clips, and audio"),
-                    WelcomeFeature(Icons.Default.Campaign, "Announcements", "Stay locked in with KDYM updates")
-                )
+                features = emptyList()
             ),
             WelcomeOnboardingPage(
-                eyebrow = "YEAR-ROUND KDYM",
+                eyebrow = "YEAR-ROUND",
                 title = "ONE APP.",
                 glitchTitle = "CONNECTED.",
-                subtitle = "Know what is happening, where to be, what to watch, and how to stay connected with the district beyond a single service or event.",
+                subtitle = "Rallies, services, media, announcements, and community in one place.",
                 icon = Icons.Default.WifiTethering,
                 accent = CyanAccent,
-                features = listOf(
-                    WelcomeFeature(Icons.Default.CalendarMonth, "Events", "Rallies, conventions, services, and camp"),
-                    WelcomeFeature(Icons.Default.Forum, "Groups", "Camp groups, updates, and conversations"),
-                    WelcomeFeature(Icons.Default.Diversity3, "Community", "People, leaders, teams, and connection")
-                )
+                features = emptyList()
             ),
             WelcomeOnboardingPage(
-                eyebrow = "CAMP MODE READY",
+                eyebrow = "CAMP MODE",
                 title = "WHEN CAMP",
                 glitchTitle = "GOES LIVE",
-                subtitle = "KDYM becomes a live camp operations app: schedules, groups, tribe wars, updates, reminders, and leadership tools when they matter most.",
+                subtitle = "Live schedule, tribe wars, group updates, reminders, and camp news.",
                 icon = Icons.Default.Bolt,
                 accent = Gold,
-                features = listOf(
-                    WelcomeFeature(Icons.Default.ListAlt, "Live schedule", "Know the next session, activity, and move"),
-                    WelcomeFeature(Icons.Default.Shield, "Access control", "Camp features unlock through approval"),
-                    WelcomeFeature(Icons.Default.EmojiEvents, "Tribe Wars", "Scores, events, points, and momentum")
-                )
+                features = emptyList()
             )
         )
     }
@@ -121,33 +102,28 @@ fun WelcomeScreen(
         ),
         label = "float"
     )
-    val haloAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.08f,
-        targetValue = 0.28f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2800, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "halo"
-    )
 
     OutpourBackground {
         Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Top Bar
-                WelcomeTopBar(onNavigateToLogin = onNavigateToLogin)
+                WelcomeTopBar()
 
                 // Carousel
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.Top,
+                    userScrollEnabled = true
                 ) { pageIndex ->
+
+                    val pageOffset = (pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction
+
                     WelcomeCarouselPageContent(
                         page = pages[pageIndex],
                         floatOffset = floatAnim,
-                        haloAlpha = haloAlpha,
-                        isSelected = pagerState.currentPage == pageIndex
+                        isSelected = pagerState.currentPage == pageIndex,
+                        pageOffset = pageOffset
                     )
                 }
 
@@ -163,8 +139,7 @@ fun WelcomeScreen(
                         scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                     },
                     onSignUp = onNavigateToSignUp,
-                    onSignIn = onNavigateToLogin,
-                    onOpenPreview = onNavigateToPlayPreview
+                    onSignIn = onNavigateToLogin
                 )
             }
         }
@@ -172,12 +147,12 @@ fun WelcomeScreen(
 }
 
 @Composable
-fun WelcomeTopBar(onNavigateToLogin: () -> Unit) {
+fun WelcomeTopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 22.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
@@ -186,23 +161,6 @@ fun WelcomeTopBar(onNavigateToLogin: () -> Unit) {
             modifier = Modifier
                 .size(44.dp)
         )
-
-        Surface(
-            onClick = onNavigateToLogin,
-            color = Color.White.copy(0.06f),
-            shape = CircleShape,
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.13f))
-        ) {
-            Text(
-                text = "SIGN IN",
-                modifier = Modifier.padding(horizontal = 17.dp, vertical = 10.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily,
-                letterSpacing = 2.sp,
-                color = Color.White.copy(0.78f)
-            )
-        }
     }
 }
 
@@ -210,19 +168,33 @@ fun WelcomeTopBar(onNavigateToLogin: () -> Unit) {
 fun WelcomeCarouselPageContent(
     page: WelcomeOnboardingPage,
     floatOffset: Float,
-    haloAlpha: Float,
-    isSelected: Boolean
+    isSelected: Boolean,
+    pageOffset: Float
 ) {
-    val scrollState = rememberScrollState()
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 22.dp)
-            .verticalScroll(scrollState),
+            .graphicsLayer {
+                // The "Windy" Effect
+                val absoluteOffset = kotlin.math.abs(pageOffset)
+
+                // Slight fade as it blows away
+                alpha = 1f - (absoluteOffset * 0.3f)
+
+                // Scale it down slightly
+                scaleX = 1f - (absoluteOffset * 0.15f)
+                scaleY = 1f - (absoluteOffset * 0.15f)
+
+                // Tilt it like the wind is catching it (rotates based on swipe direction)
+                rotationZ = pageOffset * 12f
+
+                // Add extra horizontal push so it sweeps out faster
+                translationX = pageOffset * 150f
+            },
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Hero Badge
         Surface(
@@ -251,7 +223,7 @@ fun WelcomeCarouselPageContent(
                 }
                 Text(
                     text = page.eyebrow,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     fontWeight = FontWeight.Black,
                     fontSize = 12.sp,
                     letterSpacing = 2.sp,
@@ -282,14 +254,23 @@ fun WelcomeCarouselPageContent(
                     text = page.title,
                     fontSize = if (page.title.length > 9) 34.sp else 40.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     color = Color.White.copy(0.94f),
                     letterSpacing = (-2.2).sp,
                     lineHeight = 33.sp
                 )
-                Box(modifier = Modifier.offset(x = (-4).dp)) {
-                    val fontSize = if (page.glitchTitle.length > 8) 58.sp else 66.sp
-                    GlitchText(text = page.glitchTitle, fontSize = fontSize)
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth().offset(x = (-4).dp)) {
+                    val maxFontSize = 66f
+                    val characterWidthRatio = 0.65f
+
+                    val calculatedFontSize = maxWidth.value / (page.glitchTitle.length * characterWidthRatio)
+
+                    val finalFontSize = calculatedFontSize.coerceAtMost(maxFontSize)
+
+                    GlitchText(
+                        text = page.glitchTitle,
+                        fontSize = finalFontSize.sp
+                    )
                 }
             }
         }
@@ -300,31 +281,38 @@ fun WelcomeCarouselPageContent(
             color = TextSecondary,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
-            fontFamily = RubikFontFamily,
-            lineHeight = 24.sp
+            fontFamily = QuickSandFontFamily,
+            lineHeight = 24.sp,
+            maxLines = 3
         )
 
-        // Features
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            page.features.forEachIndexed { index, feature ->
-                val featureAnim by animateFloatAsState(
-                    targetValue = if (isSelected) 1f else 0.55f,
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 300f),
-                    label = "featureAlpha"
-                )
-                val featureOffsetX by animateDpAsState(
-                    targetValue = if (isSelected) 0.dp else 18.dp,
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 300f),
-                    label = "featureOffsetX"
-                )
-                
-                WelcomeFeatureRow(
-                    feature = feature,
-                    accent = page.accent,
-                    modifier = Modifier
-                        .alpha(featureAnim)
-                        .offset(x = featureOffsetX)
-                )
+        // Features - Simplified for no scroll
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val featureLabels = if (page.title.contains("HEARTLAND")) listOf("EVENTS", "PLAY", "UPDATES")
+            else if (page.title.contains("ONE APP")) listOf("SCHEDULE", "GROUPS", "MEDIA")
+            else listOf("LIVE", "TRIBES", "ACCESS")
+
+            featureLabels.forEach { label ->
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(0.045f),
+                    shape = CircleShape,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.08f))
+                ) {
+                    Text(
+                        text = label,
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily,
+                        letterSpacing = 1.5.sp,
+                        color = Color.White.copy(0.78f)
+                    )
+                }
             }
         }
 
@@ -344,59 +332,66 @@ fun WelcomeCarouselPageContent(
                             color = page.accent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
-                            fontFamily = RubikFontFamily,
+                            fontFamily = QuickSandFontFamily,
                             letterSpacing = 2.5.sp
                         )
                         Text(
-                            text = if (page.title.contains("HEARTLAND")) "A digital home for the movement." else if (page.title.contains("ONE APP")) "Everything KDYM in one place." else "When camp starts, the app wakes up.",
+                            text = if (page.title.contains("HEARTLAND")) "A digital home for the movement." else if (page.title.contains("ONE APP")) "Know what is happening next." else "The app wakes up when camp does.",
                             color = Color.White,
                             fontSize = 23.sp,
                             fontWeight = FontWeight.Black,
-                            fontFamily = RubikFontFamily,
+                            fontFamily = QuickSandFontFamily,
                             letterSpacing = (-1).sp,
                             lineHeight = 21.sp
+                        )
+                        Text(
+                            text = if (page.title.contains("HEARTLAND")) "One place for districts moments, media and updates" 
+                                   else if (page.title.contains("ONE APP")) "Stay connected beyond one service or event" 
+                                   else "Schedules, groups, scores, alerts and leadership tools",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = QuickSandFontFamily
                         )
                     }
                     Box(
                         modifier = Modifier
-                            .size(11.dp)
-                            .background(page.accent, CircleShape)
-                            .blur(if (haloAlpha > 0.15f) 12.dp else 4.dp)
-                            .alpha(haloAlpha * 3)
-                    )
+                            .size(48.dp)
+                            .background(page.accent.copy(0.1f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = page.icon,
+                            contentDescription = null,
+                            tint = page.accent,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    val labels = if (page.title.contains("HEARTLAND")) listOf("PLAY", "MEDIA", "UPDATES")
-                                else if (page.title.contains("ONE APP")) listOf("EVENTS", "GROUPS", "KDYM")
-                                else listOf("SCHEDULE", "TRIBES", "LIVE")
-                    
-                    labels.forEach { label ->
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            color = Color.White.copy(0.052f),
-                            shape = CircleShape,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.08f))
-                        ) {
-                            Text(
-                                text = label,
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                textAlign = TextAlign.Center,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = RubikFontFamily,
-                                letterSpacing = 1.8.sp,
-                                color = Color.White.copy(0.78f)
-                            )
-                        }
+                // Progress segments
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repeat(3) { i ->
+                        val active = (page.title.contains("HEARTLAND") && i == 0) ||
+                                (page.title.contains("ONE APP") && i == 1) ||
+                                (page.title.contains("WHEN CAMP") && i == 2)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(4.dp)
+                                .clip(CircleShape)
+                                .background(if (active) page.accent else Color.White.copy(0.15f))
+                        )
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(140.dp))
     }
 }
+
 
 @Composable
 fun WelcomeFeatureRow(feature: WelcomeFeature, accent: Color, modifier: Modifier = Modifier) {
@@ -431,7 +426,7 @@ fun WelcomeFeatureRow(feature: WelcomeFeature, accent: Color, modifier: Modifier
                     color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     letterSpacing = 1.6.sp
                 )
                 Text(
@@ -439,7 +434,7 @@ fun WelcomeFeatureRow(feature: WelcomeFeature, accent: Color, modifier: Modifier
                     color = TextSecondary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
         }
@@ -454,8 +449,7 @@ fun WelcomeBottomControls(
     onSkip: () -> Unit,
     onNext: () -> Unit,
     onSignUp: () -> Unit,
-    onSignIn: () -> Unit,
-    onOpenPreview: () -> Unit
+    onSignIn: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -494,7 +488,6 @@ fun WelcomeBottomControls(
                 }
             }
 
-            // Buttons
             AnimatedContent(
                 targetState = isFinalPage,
                 transitionSpec = {
@@ -508,49 +501,24 @@ fun WelcomeBottomControls(
                             onClick = onSignUp,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                            shape = CircleShape
+                            shape = RoundedCornerShape(28.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null)
-                                Text(text = "CREATE ACCOUNT", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily, letterSpacing = 1.sp)
+                                Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text(text = "CREATE ACCOUNT", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily, letterSpacing = 1.sp)
                             }
                         }
 
                         Button(
                             onClick = onSignIn,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(0.045f), contentColor = Color.White),
-                            shape = CircleShape,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.11f))
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color.White),
+                            shape = RoundedCornerShape(28.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.2f))
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Icon(imageVector = Icons.Default.ArrowCircleRight, contentDescription = null)
-                                Text(text = "SIGN IN", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily, letterSpacing = 1.sp)
-                            }
-                        }
-
-                        Surface(
-                            onClick = onOpenPreview,
-                            modifier = Modifier.fillMaxWidth(),
-                            color = Color.White.copy(0.045f),
-                            shape = CircleShape,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.11f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 15.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.White.copy(0.76f))
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "OPEN PLAY PREVIEW",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Black,
-                                    fontFamily = RubikFontFamily,
-                                    letterSpacing = 2.sp,
-                                    color = Color.White.copy(0.76f)
-                                )
+                                Icon(imageVector = Icons.Default.ArrowCircleRight, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text(text = "SIGN IN", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily, letterSpacing = 1.sp)
                             }
                         }
                     }
@@ -569,7 +537,7 @@ fun WelcomeBottomControls(
                                 textAlign = TextAlign.Center,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
-                                fontFamily = RubikFontFamily,
+                                fontFamily = QuickSandFontFamily,
                                 letterSpacing = 2.1.sp,
                                 color = TextSecondary
                             )
@@ -582,8 +550,8 @@ fun WelcomeBottomControls(
                             shape = CircleShape
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text(text = "NEXT", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily, letterSpacing = 2.1.sp)
-                                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                                Text(text = "NEXT", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily, letterSpacing = 2.1.sp)
+                                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
                             }
                         }
                     }

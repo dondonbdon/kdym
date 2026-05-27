@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
 @Composable
@@ -35,14 +35,14 @@ fun CommandSwitch(
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = description,
                     color = TextSecondary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
             

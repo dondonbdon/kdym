@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -22,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.bti.kdym.data.models.AppUser
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
 @Composable
@@ -68,14 +67,14 @@ fun UserSelectionDialog(
                                 color = Color.White,
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Black,
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                             Text(
                                 text = title,
                                 color = TextSecondary,
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Black,
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                         }
                         IconButton(
@@ -136,8 +135,8 @@ fun UserSelectionDialog(
                                     }
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
-                                        Text(text = user.email, color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                                        Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                                        Text(text = user.email, color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
                                     }
                                     if (isSelected) {
                                         Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color(0xFF22D3EE))
@@ -160,7 +159,7 @@ fun UserSelectionDialog(
                             Text(
                                 text = if (multiSelect) "ADD SELECTED (${currentSelection.size})" else "SELECT USER",
                                 fontWeight = FontWeight.Black,
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                         }
                     }

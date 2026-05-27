@@ -13,13 +13,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.ui.theme.CardBackground
 import dev.bti.kdym.ui.theme.CardBorder
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 
+/**
+ * Visual styles for the [KDYMButton].
+ */
 enum class ButtonVariant {
+    /** High-contrast primary action (Black text on White background). */
     Primary,
+    /** Outlined secondary action (White text on Translucent background). */
     Secondary
 }
 
+/**
+ * Standard branded button used across the application.
+ *
+ * @param text The label displayed on the button (auto-uppercased).
+ * @param onClick Callback triggered when the button is pressed.
+ * @param modifier Custom modifier for layout.
+ * @param variant Visual style of the button (Primary or Secondary).
+ * @param icon Optional trailing icon composable.
+ */
 @Composable
 fun KDYMButton(
     text: String,
@@ -50,7 +64,7 @@ fun KDYMButton(
         ) {
             Text(
                 text = text.uppercase(),
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 fontWeight = FontWeight.Black,
                 fontSize = 14.sp,
                 letterSpacing = 2.sp

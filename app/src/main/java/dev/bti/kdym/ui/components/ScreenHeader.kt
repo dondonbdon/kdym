@@ -14,9 +14,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
+/**
+ * Modular header component used at the top of most screens.
+ * Supports navigation, branding icons, and dynamic titles/subtitles.
+ *
+ * @param modifier Custom modifier for layout.
+ * @param isCampMode If true, triggers specific styling for the camp session.
+ * @param title Large bold heading for the screen.
+ * @param subtitle Descriptive text below the title.
+ * @param icon Small branding or decorative icon shown next to the back button.
+ * @param iconColor Tint color for the decorative icon.
+ * @param onNavigateBack Optional callback for the back button. If null, button is hidden.
+ * @param isPrimary If true, renders the [HomeTopBar] instead of a standard title.
+ * @param titleSize Font size for the title text.
+ */
 @Composable
 fun ScreenHeader(
     modifier: Modifier = Modifier,
@@ -27,7 +41,10 @@ fun ScreenHeader(
     iconColor: Color = Color(0xFFEF4444),
     onNavigateBack: (() -> Unit)? = null,
     isPrimary: Boolean = false,
-    titleSize: androidx.compose.ui.unit.TextUnit = 32.sp
+    titleSize: androidx.compose.ui.unit.TextUnit = 32.sp,
+    userPhotoUrl: String? = null,
+    userInitials: String? = null,
+    onChangePhoto: (() -> Unit)? = null
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -39,7 +56,9 @@ fun ScreenHeader(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             if (isPrimary) {
-                HomeTopBar(isCampMode = isCampMode)
+                HomeTopBar(
+                    isCampMode = isCampMode,
+                )
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -80,7 +99,7 @@ fun ScreenHeader(
                         color = Color.White,
                         fontSize = titleSize,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         lineHeight = titleSize
                     )
                 }
@@ -90,7 +109,7 @@ fun ScreenHeader(
                         text = subtitle,
                         color = TextSecondary,
                         fontSize = 18.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
             }

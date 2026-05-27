@@ -1,156 +1,225 @@
 package dev.bti.kdym.ui.screens.admin
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.AppGroup
 import dev.bti.kdym.data.models.AppGroupType
-import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.components.GlassCard
+import dev.bti.kdym.ui.components.MappedIcon
+import dev.bti.kdym.ui.components.OutpourBackground
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
+import dev.bti.kdym.ui.theme.toColor
 import dev.bti.kdym.viewmodels.AdminViewModel
 
 @Composable
 fun ManageGroupsScreen(
     onNavigateBack: () -> Unit,
     onCreateGroup: () -> Unit,
-    onEditGroup: (String) -> Unit,
+    onManageGroup: (String) -> Unit,
     viewModel: AdminViewModel
 ) {
     val groups by viewModel.groups.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    
+    val filteredGroups = groups.filter { it.name.contains(searchQuery, ignoreCase = true) }
+
+    val activeCount = remember(groups) { groups.count { it.isActive } }
+    val publicCount = remember(groups) { groups.count { it.isPublic } }
 
     OutpourBackground {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // Header
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                ScreenHeader(
-                    onNavigateBack = onNavigateBack,
-                    icon = Icons.Default.Forum,
-                    title = "GROUPS",
-                    subtitle = "Manage official camp channels."
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
+                Button(
+                    onClick = onNavigateBack,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.1f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    if (groups.isEmpty()) {
-                        NoGroupsPlaceholder(onCreateGroup)
-                    } else {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(top = 16.dp, bottom = 140.dp)
-                        ) {
-                            items(groups) { group ->
-                                GroupListItem(group = group, onClick = { onEditGroup(group.id) })
-                            }
-                        }
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "BACK", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                }
+
+                Surface(
+                    onClick = onCreateGroup,
+                    color = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
                     }
                 }
             }
 
-            FloatingActionButton(
-                onClick = onCreateGroup,
+            LazyColumn(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 100.dp, end = 24.dp),
-                containerColor = Color.White,
-                contentColor = Color.Black,
-                shape = CircleShape
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 140.dp)
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Create Group")
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(Color(0xFFEF4444).copy(0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(imageVector = Icons.Default.Forum, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(28.dp))
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "MANAGE",
+                                color = Color(0xFFEF4444),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp,
+                                fontFamily = QuickSandFontFamily
+                            )
+                            Text(
+                                text = "GROUPS",
+                                color = Color.White,
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = QuickSandFontFamily
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Create channels, assign people, control permissions, open chat, and archive groups from one command screen.",
+                        color = TextSecondary,
+                        fontSize = 14.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Search Bar
+                    Surface(
+                        color = Color.White.copy(0.05f),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(56.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.weight(1f),
+                                textStyle = LocalTextStyle.current.copy(color = Color.White, fontFamily = QuickSandFontFamily),
+                                cursorBrush = SolidColor(Color.White),
+                                decorationBox = { innerTextField ->
+                                    if (searchQuery.isEmpty()) {
+                                        Text(text = "Search groups", color = TextSecondary, fontSize = 15.sp, fontFamily = QuickSandFontFamily)
+                                    }
+                                    innerTextField()
+                                }
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Stat Boxes
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        GroupStatBox(count = activeCount, label = "ACTIVE", modifier = Modifier.weight(1f))
+                        GroupStatBox(count = publicCount, label = "PUBLIC", modifier = Modifier.weight(1f))
+                        GroupStatBox(count = 0, label = "LOCKED", modifier = Modifier.weight(1f))
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                items(filteredGroups) { group ->
+                    GroupCardRedesign(group = group, onClick = { onManageGroup(group.id) })
+                }
             }
         }
     }
 }
 
 @Composable
-fun NoGroupsPlaceholder(onCreateGroup: () -> Unit) {
-    GlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = Color.White.copy(0.05f)) {
+fun GroupStatBox(count: Int, label: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.height(64.dp),
+        color = Color.White.copy(0.05f),
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.Forum,
-                contentDescription = null,
-                tint = Color(0xFF22D3EE),
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No groups yet",
+                text = count.toString(),
                 color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = RubikFontFamily
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = QuickSandFontFamily
             )
             Text(
-                text = "Create official groups for tribes, cabins, leaders, volunteers, prayer teams, or general camp updates.",
+                text = label,
                 color = TextSecondary,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                fontFamily = RubikFontFamily
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                fontFamily = QuickSandFontFamily
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onCreateGroup,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ),
-                shape = CircleShape,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "CREATE GROUP",
-                    fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
-                )
-            }
         }
     }
 }
 
 @Composable
-fun GroupListItem(group: AppGroup, onClick: () -> Unit) {
-    val typeColor = when (group.type) {
-        AppGroupType.tribe -> Color(0xFFEF4444)
+fun GroupCardRedesign(group: AppGroup, onClick: () -> Unit) {
+    val typeColor = group.colorHex?.toColor() ?: when (group.type) {
+        AppGroupType.tribe -> Color(0xFF22D3EE)
         AppGroupType.leadership -> Color(0xFFFBBF24)
-        AppGroupType.cabin -> Color(0xFF10B981)
-        else -> Color(0xFF22D3EE)
+        else -> Color(0xFFEF4444)
     }
 
     GlassCard(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        modifier = Modifier.fillMaxWidth(),
         cornerRadius = 24.dp,
-        backgroundColor = Color.White.copy(0.05f)
+        backgroundColor = Color.Black.copy(0.3f)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -158,68 +227,94 @@ fun GroupListItem(group: AppGroup, onClick: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(typeColor.copy(0.1f), CircleShape),
+                    .size(56.dp)
+                    .background(typeColor.copy(0.1f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = when (group.type) {
-                        AppGroupType.tribe -> Icons.Default.Shield
-                        AppGroupType.leadership -> Icons.Default.Grade
-                        AppGroupType.cabin -> Icons.Default.Home
-                        else -> Icons.Default.ChatBubble
-                    },
-                    contentDescription = null,
-                    tint = typeColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (group.iconName != null) {
+                    MappedIcon(
+                        iosName = group.iconName,
+                        tint = typeColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = when (group.type) {
+                            AppGroupType.tribe -> Icons.Default.Shield
+                            AppGroupType.leadership -> Icons.Default.Grade
+                            else -> Icons.Default.ChatBubble
+                        },
+                        contentDescription = null,
+                        tint = typeColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = group.name,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = group.name,
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    if (group.isOfficial) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF22D3EE), modifier = Modifier.size(14.dp))
+                    }
+                }
                 Text(
                     text = group.description ?: group.type.title,
                     color = TextSecondary,
                     fontSize = 12.sp,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     maxLines = 1
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(imageVector = Icons.Default.People, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(12.dp))
-                        Text(text = "${group.memberCount} MEMBERS", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                    }
-                    if (group.isOfficial) {
-                        Surface(color = Color(0xFFEF4444).copy(0.1f), shape = RoundedCornerShape(4.dp)) {
-                            Text(
-                                text = "OFFICIAL", 
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                color = Color(0xFFEF4444), 
-                                fontSize = 8.sp, 
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = group.type.title.uppercase(),
+                        color = typeColor,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "${group.memberCount} MEMBERS",
+                        color = TextSecondary,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "PRIVATE",
+                        color = Color(0xFFEAB308),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily,
+                        letterSpacing = 1.sp
+                    )
                 }
             }
             
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = Color.White.copy(0.3f)
-            )
+            Surface(
+                onClick = onClick,
+                color = Color.White.copy(0.05f),
+                shape = CircleShape,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(imageVector = Icons.Default.Tune, contentDescription = null, tint = Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
+                }
+            }
         }
     }
 }

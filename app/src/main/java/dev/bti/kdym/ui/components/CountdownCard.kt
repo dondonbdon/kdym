@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import kotlinx.coroutines.delay
 import java.util.*
@@ -30,36 +30,37 @@ fun CountdownCard(targetDate: Date) {
 
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        backgroundColor = Color.Black.copy(alpha = 0.4f),
-        borderColor = Color.White.copy(alpha = 0.05f)
+        backgroundColor = Color.Black.copy(alpha = 0.75f),
+        borderColor = Color.White.copy(alpha = 0.05f),
+        contentPadding = 12.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.Schedule,
                     contentDescription = null,
                     tint = Color(0xFF22D3EE),
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(14.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Countdown to camp",
                     color = Color(0xFF22D3EE),
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = "JUN 1",
                     color = TextSecondary,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -67,12 +68,10 @@ fun CountdownCard(targetDate: Date) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TimeComponent(value = timeLeft.days, label = "DAYS")
-                Text(text = ":", color = Color(0xFFEF4444), fontSize = 24.sp, fontWeight = FontWeight.Black)
+                Text(text = ":", color = Color(0xFFEF4444), fontSize = 18.sp, fontWeight = FontWeight.Black)
                 TimeComponent(value = timeLeft.hours, label = "HRS")
-                Text(text = ":", color = Color(0xFFEF4444), fontSize = 24.sp, fontWeight = FontWeight.Black)
+                Text(text = ":", color = Color(0xFFEF4444), fontSize = 18.sp, fontWeight = FontWeight.Black)
                 TimeComponent(value = timeLeft.minutes, label = "MIN")
-                Text(text = ":", color = Color(0xFFEF4444), fontSize = 24.sp, fontWeight = FontWeight.Black)
-                TimeComponent(value = timeLeft.seconds, label = "SEC")
             }
         }
     }
@@ -84,16 +83,16 @@ fun TimeComponent(value: Long, label: String) {
         Text(
             text = value.toString().padStart(2, '0'),
             color = Color.White,
-            fontSize = 44.sp,
+            fontSize = 32.sp,
             fontWeight = FontWeight.Black,
-            fontFamily = RubikFontFamily
+            fontFamily = QuickSandFontFamily
         )
         Text(
             text = label,
             color = TextSecondary,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
             fontWeight = FontWeight.Black,
-            fontFamily = RubikFontFamily
+            fontFamily = QuickSandFontFamily
         )
     }
 }

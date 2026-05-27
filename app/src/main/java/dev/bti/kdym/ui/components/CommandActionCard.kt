@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
 @Composable
@@ -49,14 +49,14 @@ fun CommandActionCard(icon: ImageVector, iconColor: Color, title: String, subtit
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = subtitle,
                     color = TextSecondary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
             

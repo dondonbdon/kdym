@@ -28,10 +28,13 @@ fun GlassNavigationBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
         GlassCard(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .widthIn(max = 600.dp)
+                .fillMaxWidth(),
             cornerRadius = 48.dp,
             backgroundColor = Color.Black.copy(alpha = 0.8f),
             borderColor = Color.White.copy(alpha = 0.1f)

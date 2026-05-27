@@ -19,16 +19,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.bti.kdym.data.models.AppGroup
-import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.ui.components.GroupListCard
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.components.ScreenHeader
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.GroupsViewModel
 import dev.bti.kdym.viewmodels.MainViewModel
 
+/**
+ * Hub screen for all group-related activities.
+ * Lists the user's joined channels and provides access to official camp systems (Tribe Wars, Announcements).
+ *
+ * @param onNavigateToChat Callback triggered when a group card is clicked.
+ * @param viewModel ViewModel for managing user group lists.
+ * @param mainViewModel Main ViewModel for accessing global app config.
+ */
 @Composable
 fun GroupsScreen(
     onNavigateToChat: (String) -> Unit,
@@ -38,20 +44,6 @@ fun GroupsScreen(
     val appConfig by mainViewModel.appConfig.collectAsState()
     val isCampMode = appConfig?.campModeEnabled ?: false
     val accentColor = if (isCampMode) Color(0xFF10B981) else Color(0xFFEF4444)
-
-    val tribeWars = AppGroup(
-        name = "TRIBE WARS",
-        description = "View live rankings, current scores, and recent point changes.",
-        type = AppGroupType.tribe,
-        isOfficial = false
-    )
-
-    val announcements = AppGroup(
-        name = "ANNOUNCEMENTS",
-        description = "Camp alerts, KDYM updates, and leadership messages.",
-        type = AppGroupType.general,
-        isOfficial = false
-    )
 
     val groups by viewModel.groups.collectAsState()
 
@@ -72,7 +64,7 @@ fun GroupsScreen(
             ) {
 
                 item {
-                    // Header Icon
+                    // Page branding icon
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -94,7 +86,7 @@ fun GroupsScreen(
                         color = Color.White,
                         fontSize = 44.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         lineHeight = 44.sp
                     )
 
@@ -103,40 +95,18 @@ fun GroupsScreen(
                         color = TextSecondary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
                 }
 
-                // Fixed Cards
-                if (isCampMode) {
-                    item {
-                        GroupListCard(group = tribeWars)
-                    }
-                }
-
-                item {
-                    GroupListCard(group = announcements)
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // Your Channels Section
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "YOUR CHANNELS",
-                        color = Color.White,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
-                        lineHeight = 28.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
                 items(groups) { group ->
-                    GroupListCard(group = group, onClick = { onNavigateToChat(group.id) })
+                    GroupListCard(
+                        group = group,
+                        currentUserId = viewModel.currentUserId,
+                        onClick = { onNavigateToChat(group.id) }
+                    )
                 }
             }
         }

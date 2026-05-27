@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.ui.components.*
 import dev.bti.kdym.ui.components.home.FeedPostCard
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
 import java.text.SimpleDateFormat
@@ -78,14 +78,14 @@ fun CommentThreadScreen(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Text(
                         text = "COMMENTS",
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
                 
@@ -167,13 +167,13 @@ fun CommentItem(author: String, body: String, time: String) {
                     color = Color(0xFF22D3EE),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = time,
                     color = TextSecondary,
                     fontSize = 10.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -181,7 +181,7 @@ fun CommentItem(author: String, body: String, time: String) {
                 text = body,
                 color = Color.White,
                 fontSize = 16.sp,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
         }
     }

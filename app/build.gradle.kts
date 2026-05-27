@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.firebase.crashlytics)
 }
 
 android {
@@ -57,6 +59,9 @@ android {
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.animation.core)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.remote.creation.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -72,11 +77,13 @@ dependencies {
     // Accompanist & Navigation
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.ui.graphics)
     implementation(libs.coil.compose)
 
     // Firebase & Auth
     implementation(libs.firebase.ai)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.storage)
@@ -93,7 +100,15 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
 
+    // Persistence
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+    implementation(libs.kotlinx.serialization.json)
 
     // Testing
     testImplementation(libs.junit)

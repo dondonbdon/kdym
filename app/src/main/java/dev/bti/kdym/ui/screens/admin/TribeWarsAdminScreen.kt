@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -14,22 +13,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.toColorInt
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.data.models.Tribe
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
@@ -37,7 +30,7 @@ import dev.bti.kdym.viewmodels.AdminViewModel
 fun TribeWarsAdminScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddScore: (String?) -> Unit,
-    onNavigateToCreateEvent: () -> Unit,
+    onNavigateToCreateEvent: (String?) -> Unit,
     mainViewModel: dev.bti.kdym.viewmodels.MainViewModel,
     viewModel: AdminViewModel
 ) {
@@ -73,14 +66,14 @@ fun TribeWarsAdminScreen(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Text(
                         text = "RANKINGS",
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -103,14 +96,14 @@ fun TribeWarsAdminScreen(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 2.sp,
-                            fontFamily = RubikFontFamily
+                            fontFamily = QuickSandFontFamily
                         )
                         Text(
                             text = "SCORE CONTROLS",
                             color = Color.White,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Black,
-                            fontFamily = RubikFontFamily
+                            fontFamily = QuickSandFontFamily
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -124,7 +117,7 @@ fun TribeWarsAdminScreen(
                                 label = "CREATE EVENT",
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable { onNavigateToCreateEvent() }
+                                    .clickable { onNavigateToCreateEvent(null) }
                             )
                             ScoreActionButton(
                                 icon = Icons.Default.AddBusiness,
@@ -159,13 +152,13 @@ fun TribeWarsAdminScreen(
                                         color = Color.White,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Black,
-                                        fontFamily = RubikFontFamily
+                                        fontFamily = QuickSandFontFamily
                                     )
                                     Text(
                                         text = "Publish current rankings to the Home feed.",
                                         color = TextSecondary,
                                         fontSize = 12.sp,
-                                        fontFamily = RubikFontFamily
+                                        fontFamily = QuickSandFontFamily
                                     )
                                 }
                                 Icon(
@@ -187,14 +180,14 @@ fun TribeWarsAdminScreen(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Text(
                         text = "TRIBE EVENTS",
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -206,13 +199,18 @@ fun TribeWarsAdminScreen(
                                 text = "No active events",
                                 color = TextSecondary,
                                 modifier = Modifier.padding(16.dp),
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                         }
                     }
                 } else {
                     items(tribeEvents) { event ->
-                        GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 24.dp) {
+                        GlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onNavigateToCreateEvent(event.id) },
+                            cornerRadius = 24.dp
+                        ) {
                             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier.size(40.dp).background(Color(0xFFEF4444).copy(0.1f), CircleShape),
@@ -221,9 +219,12 @@ fun TribeWarsAdminScreen(
                                     Icon(imageVector = Icons.Default.Flag, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
-                                Column {
-                                    Text(text = event.title.uppercase(), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
-                                    Text(text = "${event.maxPoints} PTS AVAILABLE", color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = event.title.uppercase(), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                                    Text(text = "${event.maxPoints} PTS AVAILABLE", color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                                }
+                                if (isAdmin) {
+                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -239,14 +240,14 @@ fun TribeWarsAdminScreen(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Text(
                         text = "RECENT SCORES",
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     
@@ -255,7 +256,7 @@ fun TribeWarsAdminScreen(
                             text = "Score history will appear here.",
                             color = TextSecondary,
                             modifier = Modifier.padding(16.dp),
-                            fontFamily = RubikFontFamily
+                            fontFamily = QuickSandFontFamily
                         )
                     }
                 }
@@ -283,7 +284,7 @@ fun TribeScoreCard(tribe: Tribe, showAddButton: Boolean, onAddScore: () -> Unit)
                 color = if (tribe.rank == 1) Color(0xFFEAB308) else Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 modifier = Modifier.width(40.dp)
             )
 
@@ -309,13 +310,13 @@ fun TribeScoreCard(tribe: Tribe, showAddButton: Boolean, onAddScore: () -> Unit)
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "${tribe.memberCount} members",
                     color = TextSecondary,
                     fontSize = 12.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -325,14 +326,14 @@ fun TribeScoreCard(tribe: Tribe, showAddButton: Boolean, onAddScore: () -> Unit)
                     color = Color.White,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "PTS",
                     color = TextSecondary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -380,7 +381,7 @@ fun ScoreActionButton(
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
         }
     }

@@ -25,7 +25,7 @@ import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.components.ScreenHeader
 import dev.bti.kdym.ui.components.SendAnnouncementDialog
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 import dev.bti.kdym.viewmodels.MainViewModel
@@ -96,8 +96,8 @@ fun AnnouncementsScreen(
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Icon(imageVector = Icons.Default.Campaign, contentDescription = null, tint = Color(0xFF22D3EE))
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    Text(text = "No announcements yet", color = Color.White, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-                                    Text(text = "Announcements from KDYM leadership will appear here.", color = TextSecondary, fontFamily = RubikFontFamily)
+                                    Text(text = "No announcements yet", color = Color.White, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                                    Text(text = "Announcements from KDYM leadership will appear here.", color = TextSecondary, fontFamily = QuickSandFontFamily)
                                 }
                             }
                         }
@@ -171,7 +171,7 @@ fun AnnouncementCard(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 1.sp,
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                         }
                     }
@@ -183,7 +183,7 @@ fun AnnouncementCard(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -194,7 +194,7 @@ fun AnnouncementCard(
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 letterSpacing = (-0.5).sp
             )
             
@@ -205,7 +205,7 @@ fun AnnouncementCard(
                 color = TextSecondary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 lineHeight = 20.sp
             )
 
@@ -221,7 +221,7 @@ fun AnnouncementCard(
                     color = TextSecondary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     letterSpacing = 1.sp
                 )
 
@@ -234,7 +234,7 @@ fun AnnouncementCard(
                     color = TextSecondary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     letterSpacing = 1.sp
                 )
             }

@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
@@ -50,14 +50,14 @@ fun CreatePollScreen(
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Text(
                         text = "POLL",
                         color = TextSecondary,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
                 IconButton(
@@ -78,7 +78,7 @@ fun CreatePollScreen(
                     text = "Ask the group a question and collect votes.",
                     color = TextSecondary,
                     fontSize = 14.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -149,7 +149,7 @@ fun CreatePollScreen(
                 ) {
                     Icon(imageVector = Icons.Default.Poll, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "CREATE POLL", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                    Text(text = "CREATE POLL", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))

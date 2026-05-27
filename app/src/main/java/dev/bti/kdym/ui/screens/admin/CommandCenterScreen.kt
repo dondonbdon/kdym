@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Settings
@@ -35,7 +36,7 @@ import dev.bti.kdym.data.models.UserRole
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.components.ScreenHeader
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
 
@@ -45,6 +46,7 @@ fun CommandCenterScreen(
     onNavigateToAnnouncements: () -> Unit,
     onNavigateToTribeWars: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToChurches: () -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
     val user by viewModel.user.collectAsState()
@@ -84,6 +86,18 @@ fun CommandCenterScreen(
                         title = "Command Center",
                         subtitle = "Manage camp mode, users, tribes, events, scoring, groups, and media.",
                         onClick = onNavigateToHub
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                if (role == UserRole.pastor || role.isAdmin || user?.isLeader == true) {
+                    CommandActionCard(
+                        icon = Icons.Default.AccountBalance,
+                        iconColor = Color(0xFF22D3EE),
+                        title = "Churches",
+                        subtitle = "Manage district churches and pastors.",
+                        onClick = onNavigateToChurches
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -155,7 +169,7 @@ fun ProfileHeader(user: AppUser?) {
                     color = Color.White,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -167,13 +181,13 @@ fun ProfileHeader(user: AppUser?) {
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = user?.email ?: "don@don.don",
                     color = TextSecondary,
                     fontSize = 14.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
@@ -188,7 +202,7 @@ fun ProfileHeader(user: AppUser?) {
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
             }
@@ -241,14 +255,14 @@ fun CommandActionCard(
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = subtitle,
                     color = TextSecondary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -290,7 +304,7 @@ fun SignOutButton(onSignOut: () -> Unit) {
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
         }
     }

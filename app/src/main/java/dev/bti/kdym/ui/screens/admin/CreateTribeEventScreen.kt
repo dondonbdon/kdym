@@ -19,25 +19,38 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
+import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.platform.LocalLocale
 
 @Composable
 fun CreateTribeEventScreen(
+    eventId: String? = null,
     onNavigateBack: () -> Unit,
     viewModel: AdminViewModel
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var maxPoints by remember { mutableIntStateOf(100) }
-    var status by remember { mutableStateOf("Upcoming") }
-    var startDate by remember { mutableStateOf(Calendar.getInstance()) }
+    val tribeEvents by viewModel.tribeEvents.collectAsState()
+    val existingEvent = remember(eventId, tribeEvents) { tribeEvents.find { it.id == eventId } }
+
+    var title by remember(existingEvent) { mutableStateOf(existingEvent?.title ?: "") }
+    var description by remember(existingEvent) { mutableStateOf(existingEvent?.description ?: "") }
+    var location by remember(existingEvent) { mutableStateOf(existingEvent?.location ?: "") }
+    var maxPoints by remember(existingEvent) { mutableIntStateOf(existingEvent?.maxPoints ?: 100) }
+    var status by remember(existingEvent) { mutableStateOf(existingEvent?.status?.replaceFirstChar { it.uppercase() } ?: "Upcoming") }
+    var startDate by remember(existingEvent) { 
+        mutableStateOf(
+            existingEvent?.startDate?.let { 
+                val cal = Calendar.getInstance()
+                cal.time = it.toDate()
+                cal
+            } ?: Calendar.getInstance()
+        )
+    }
 
     val statusOptions = listOf("Upcoming", "Active", "Completed", "Archived")
 
@@ -65,14 +78,14 @@ fun CreateTribeEventScreen(
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     lineHeight = 32.sp
                 )
                 Text(
                     text = "Camp ID: camp_2026",
                     color = TextSecondary,
                     fontSize = 14.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -100,7 +113,7 @@ fun CreateTribeEventScreen(
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         modifier = Modifier.weight(1f)
                     )
                     Row(
@@ -139,7 +152,7 @@ fun CreateTribeEventScreen(
                             border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, Color.White) else null
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(text = option, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
+                                Text(text = option, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
                             }
                         }
                     }
@@ -158,14 +171,14 @@ fun CreateTribeEventScreen(
                             modifier = Modifier.background(Color.White.copy(0.1f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = SimpleDateFormat("d MMM 2026", Locale.getDefault()).format(startDate.time), color = Color.White, fontSize = 14.sp)
+                            Text(text = SimpleDateFormat("d MMM 2026", LocalLocale.current.platformLocale).format(startDate.time), color = Color.White, fontSize = 14.sp)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Row(
                             modifier = Modifier.background(Color.White.copy(0.1f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(startDate.time), color = Color.White, fontSize = 14.sp)
+                            Text(text = SimpleDateFormat("HH:mm", LocalLocale.current.platformLocale).format(startDate.time), color = Color.White, fontSize = 14.sp)
                         }
                     }
                 }
@@ -174,7 +187,21 @@ fun CreateTribeEventScreen(
 
                 Button(
                     onClick = {
-                        viewModel.createTribeEvent(title, description, maxPoints)
+                        if (eventId == null) {
+                            viewModel.createTribeEvent(title, description, maxPoints)
+                        } else {
+                            existingEvent?.let {
+                                viewModel.updateTribeEvent(it.copy(
+                                    title = title,
+                                    description = description,
+                                    location = location,
+                                    maxPoints = maxPoints,
+                                    status = status.lowercase(),
+                                    startDate = Timestamp(startDate.time),
+                                    updatedAt = Timestamp.now()
+                                ))
+                            }
+                        }
                         onNavigateBack()
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -185,7 +212,7 @@ fun CreateTribeEventScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(imageVector = Icons.Default.Flag, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "CREATE TRIBE EVENT", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                        Text(text = if (eventId == null) "CREATE TRIBE EVENT" else "SAVE CHANGES", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                     }
                 }
 

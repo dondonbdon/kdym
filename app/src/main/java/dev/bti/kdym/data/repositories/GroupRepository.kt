@@ -1,33 +1,96 @@
 package dev.bti.kdym.data.repositories
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
+import dev.bti.kdym.data.local.*
 import dev.bti.kdym.data.models.AppGroup
+import dev.bti.kdym.data.models.AppUser
 import dev.bti.kdym.data.models.GroupMessage
+import dev.bti.kdym.data.models.GroupAttachment
+import dev.bti.kdym.data.models.GroupJoinRequest
+import dev.bti.kdym.data.models.MessageReaction
 import dev.bti.kdym.data.models.Poll
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Repository for managing groups, chat messages, polls, and message reactions.
+ */
 class GroupRepository(
+    private val appGroupDao: AppGroupDao? = null,
+    private val groupMessageDao: GroupMessageDao? = null,
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    fun getGroupsForUser(uid: String): Flow<List<AppGroup>> {
-        return firestore.collection("groups")
-            .whereArrayContains("memberIds", uid)
-            .whereEqualTo("isActive", true)
-            .snapshots()
-            .map { snapshot ->
-                snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(AppGroup::class.java)?.copy(
-                        id = doc.id
-                    )
-                }
+    /**
+     * Returns a stream of active groups for a user.
+     * Prioritizes local cache while syncing with network updates.
+     */
+    fun getGroupsForUser(uid: String, tribeId: String? = null): Flow<List<AppGroup>> {
+        val networkFlow = flow {
+            val memberQuery = firestore.collection("groups")
+                .whereArrayContains("memberIds", uid)
+                .whereEqualTo("isActive", true)
+                .snapshots()
+
+            val publicQuery = firestore.collection("groups")
+                .whereEqualTo("isPublic", true)
+                .whereEqualTo("isActive", true)
+                .snapshots()
+
+            val tribeQuery = if (tribeId != null) {
+                firestore.collection("groups")
+                    .whereEqualTo("tribeId", tribeId)
+                    .whereEqualTo("isActive", true)
+                    .snapshots()
+            } else {
+                flowOf(null)
             }
+
+            combine(memberQuery, publicQuery, tribeQuery) { memberSnap, publicSnap, tribeSnap ->
+                val allDocs = mutableListOf<AppGroup>()
+
+                memberSnap.documents.forEach { doc ->
+                    doc.toObject(AppGroup::class.java)?.copy(id = doc.id)?.let { allDocs.add(it) }
+                }
+
+                publicSnap.documents.forEach { doc ->
+                    doc.toObject(AppGroup::class.java)?.copy(id = doc.id)?.let { group ->
+                        if (allDocs.none { it.id == group.id }) {
+                            allDocs.add(group)
+                        }
+                    }
+                }
+
+                tribeSnap?.documents?.forEach { doc ->
+                    doc.toObject(AppGroup::class.java)?.copy(id = doc.id)?.let { group ->
+                        if (allDocs.none { it.id == group.id }) {
+                            allDocs.add(group)
+                        }
+                    }
+                }
+
+                allDocs.sortedByDescending { it.lastMessageAt ?: it.createdAt }
+            }.onEach { groups ->
+                appGroupDao?.insertGroups(groups.map { it.toEntity() })
+            }.collect { emit(it) }
+        }
+
+        return if (appGroupDao != null) {
+            combine(
+                appGroupDao.getGroups().map { entities -> entities.map { it.toModel() } },
+                networkFlow
+            ) { cached, network -> network.ifEmpty { cached } }
+        } else {
+            networkFlow
+        }
     }
 
+    /**
+     * Returns a real-time stream of all active groups in the system.
+     */
     fun getAllGroups(): Flow<List<AppGroup>> {
         return firestore.collection("groups")
             .whereEqualTo("isActive", true)
@@ -41,6 +104,9 @@ class GroupRepository(
             }
     }
 
+    /**
+     * Returns a real-time stream of groups marked as public and active.
+     */
     fun getPublicGroups(): Flow<List<AppGroup>> {
         return firestore.collection("groups")
             .whereEqualTo("isPublic", true)
@@ -55,28 +121,51 @@ class GroupRepository(
             }
     }
 
-    fun getMessages(groupId: String): Flow<List<GroupMessage>> {
-        return firestore.collection("groups")
+    /**
+     * Returns a stream of the most recent messages for a group.
+     * Prioritizes local cache while syncing with network updates.
+     */
+    fun getMessages(groupId: String, limit: Long = 50, startAfterTimestamp: com.google.firebase.Timestamp? = null): Flow<List<GroupMessage>> {
+        val networkFlow = firestore.collection("groups")
             .document(groupId)
             .collection("messages")
             .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(100)
+            .limit(limit)
             .snapshots()
             .map { snapshot ->
-                // Ensure IDs are mapped correctly if relying on the document ID
                 snapshot.documents.mapNotNull { doc ->
                     doc.toObject(GroupMessage::class.java)?.copy(
                         id = doc.id
                     )
                 }
             }
+            .onEach { messages ->
+                if (startAfterTimestamp == null) {
+                    groupMessageDao?.insertMessages(messages.map { it.toEntity() })
+                }
+            }
+
+        return if (groupMessageDao != null && startAfterTimestamp == null) {
+            combine(
+                groupMessageDao.getMessages(groupId).map { entities -> entities.map { it.toModel() } },
+                networkFlow
+            ) { cached, network -> network.ifEmpty { cached } }
+        } else {
+            networkFlow
+        }
     }
 
+    /**
+     * Creates a new group.
+     */
     suspend fun createGroup(group: AppGroup) {
         val ref = firestore.collection("groups").document()
         ref.set(group.copy(id = ref.id)).await()
     }
 
+    /**
+     * Updates an existing group document.
+     */
     suspend fun updateGroup(group: AppGroup) {
         firestore.collection("groups")
             .document(group.id)
@@ -84,6 +173,9 @@ class GroupRepository(
             .await()
     }
 
+    /**
+     * Appends a message to a group's message subcollection.
+     */
     suspend fun sendMessage(groupId: String, message: GroupMessage) {
         firestore.collection("groups")
             .document(groupId)
@@ -92,22 +184,41 @@ class GroupRepository(
             .await()
     }
 
-    suspend fun createPoll(poll: Poll): String {
-        val ref = firestore.collection("polls").document()
+    /**
+     * Creates a new poll within a group's subcollection and returns its unique ID.
+     */
+    suspend fun createPoll(groupId: String, poll: Poll): String {
+        val ref = firestore.collection("groups")
+            .document(groupId)
+            .collection("polls")
+            .document()
+        
         val newPoll = poll.copy(id = ref.id)
         ref.set(newPoll).await()
         return ref.id
     }
 
-    fun getPoll(pollId: String): Flow<Poll?> {
-        return firestore.collection("polls")
+    /**
+     * Returns a real-time stream of a specific poll's data.
+     */
+    fun getPoll(groupId: String, pollId: String): Flow<Poll?> {
+        return firestore.collection("groups")
+            .document(groupId)
+            .collection("polls")
             .document(pollId)
             .snapshots()
             .map { it.toObject(Poll::class.java) }
     }
 
-    suspend fun voteInPoll(pollId: String, optionId: String, userId: String) {
-        val pollRef = firestore.collection("polls").document(pollId)
+    /**
+     * Casts or toggles a user's vote in a poll.
+     * Uses a transaction to ensure vote counts and voter lists remain synchronized.
+     */
+    suspend fun voteInPoll(groupId: String, pollId: String, optionId: String, userId: String) {
+        val pollRef = firestore.collection("groups")
+            .document(groupId)
+            .collection("polls")
+            .document(pollId)
         firestore.runTransaction { transaction ->
             val snapshot = transaction.get(pollRef)
             val poll = snapshot.toObject(Poll::class.java) ?: return@runTransaction
@@ -145,35 +256,35 @@ class GroupRepository(
         }.await()
     }
 
-    suspend fun addReaction(groupId: String, messageId: String, userId: String, emoji: String) {
+    /**
+     * Toggles an emoji reaction on a specific group message.
+     * Uses a transaction to update the reaction subcollection and aggregate counts on the message.
+     */
+    suspend fun addReaction(groupId: String, messageId: String, userId: String, emoji: String, userName: String = "KDYM Member") {
         val messageRef = firestore.collection("groups").document(groupId)
             .collection("messages").document(messageId)
 
-        // Path to the subcollection where the user's specific reaction lives
+        // Using userId as the document ID prevents duplicate reactions from the same user
         val reactionRef = messageRef.collection("reactions").document(userId)
 
         try {
             firestore.runTransaction { transaction ->
-                // 1. Read the current message document to get existing counts
                 val snapshot = transaction.get(messageRef)
-
-                // If the message was deleted, abort
                 if (!snapshot.exists()) return@runTransaction
 
-                // 2. Check if the user has already reacted
                 val existingReactionSnapshot = transaction.get(reactionRef)
+
+                // FIX: Look for the field named "reaction" to match your friend's DB schema
                 val existingEmoji = if (existingReactionSnapshot.exists()) {
-                    existingReactionSnapshot.getString("emoji")
+                    existingReactionSnapshot.getString("reaction")
                 } else null
 
-                // Firestore stores numbers as Long in raw map snapshots
                 @Suppress("UNCHECKED_CAST")
                 val currentCounts = snapshot.get("reactionCounts") as? MutableMap<String, Long>
                     ?: mutableMapOf()
 
-                // 3. Logic for toggling or switching reactions
                 if (existingEmoji == emoji) {
-                    // USER CLICKED THE SAME EMOJI: Remove the reaction
+                    // USER CLICKED THE SAME EMOJI: Remove the reaction entirely
                     transaction.delete(reactionRef)
                     val count = currentCounts[emoji] ?: 0L
                     if (count > 1L) {
@@ -182,16 +293,20 @@ class GroupRepository(
                         currentCounts.remove(emoji)
                     }
                 } else {
-                    // USER ADDED A NEW EMOJI OR SWITCHED EMOJIS:
-                    // Write to the subcollection
+                    // USER ADDED A NEW EMOJI OR SWITCHED EMOJIS
+                    // FIX: Save the data exactly as your friend structured it
                     val reactionData = mapOf(
-                        "userId" to userId,
-                        "emoji" to emoji,
-                        "timestamp" to FieldValue.serverTimestamp()
+                        "createdAt" to FieldValue.serverTimestamp(),
+                        "updatedAt" to FieldValue.serverTimestamp(),
+                        "displayName" to userName,
+                        "userName" to userName,
+                        "reaction" to emoji,
+                        "uid" to userId,
+                        "userId" to userId
                     )
                     transaction.set(reactionRef, reactionData)
 
-                    // Decrement the old emoji count if they switched
+                    // Decrement old emoji count if they switched
                     if (existingEmoji != null) {
                         val oldCount = currentCounts[existingEmoji] ?: 0L
                         if (oldCount > 1L) {
@@ -201,18 +316,107 @@ class GroupRepository(
                         }
                     }
 
-                    // Increment the new emoji count
+                    // Increment new emoji count
                     val newCount = currentCounts[emoji] ?: 0L
                     currentCounts[emoji] = newCount + 1L
                 }
 
-                // 4. Update the aggregate counts on the main message document
+                // Update the parent document so the Chat Bubble renders instantly without subcollection queries
                 transaction.update(messageRef, "reactionCounts", currentCounts)
             }.await()
-
         } catch (e: Exception) {
-            // Rethrow or handle locally if preferred
             throw e
         }
+    }
+
+    /**
+     * Fetches detailed reaction data for a specific message (Used for the Bottom Sheet).
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun getMessageReactions(groupId: String, messageId: String): Flow<List<MessageReaction>> {
+        return firestore.collection("groups").document(groupId)
+            .collection("messages").document(messageId)
+            .collection("reactions")
+            .snapshots()
+            .map { snapshot ->
+                // FIX: Read directly from the updated schema. No need to do a secondary fetch for user profiles
+                // since your friend is saving the userName directly in the reaction document!
+                snapshot.documents.mapNotNull { doc ->
+                    val userId = doc.getString("userId") ?: return@mapNotNull null
+                    val emoji = doc.getString("reaction") ?: "" // Looking for "reaction"
+                    val userName = doc.getString("userName") ?: doc.getString("displayName") ?: "Unknown"
+
+                    MessageReaction(
+                        userId = userId,
+                        userName = userName,
+                        userPhotoURL = null, // You can add photoURL to the DB schema if you want avatars in the bottom sheet
+                        emoji = emoji
+                    )
+                }
+            }
+    }
+
+
+    /**
+     * Submits a request to join a group.
+     */
+    suspend fun requestJoinGroup(request: GroupJoinRequest) {
+        val ref = firestore.collection("groupRequests").document()
+        ref.set(request.copy(id = ref.id)).await()
+    }
+
+    /**
+     * Returns a stream of join requests for a specific user.
+     */
+    fun getJoinRequestsForUser(uid: String): Flow<List<GroupJoinRequest>> {
+        return firestore.collection("groupRequests")
+            .whereEqualTo("requesterId", uid)
+            .snapshots()
+            .map { snap ->
+                snap.documents.mapNotNull { it.toObject(GroupJoinRequest::class.java)?.copy(id = it.id) }
+            }
+    }
+
+    /**
+     * Returns a stream of pending join requests for a specific group (for admins/leaders).
+     */
+    fun getJoinRequestsForGroup(groupId: String): Flow<List<GroupJoinRequest>> {
+        return firestore.collection("groupRequests")
+            .whereEqualTo("groupId", groupId)
+            .whereEqualTo("status", "pending")
+            .snapshots()
+            .map { snap ->
+                snap.documents.mapNotNull { it.toObject(GroupJoinRequest::class.java)?.copy(id = it.id) }
+            }
+    }
+
+    /**
+     * Updates the status of a join request.
+     */
+    suspend fun updateJoinRequestStatus(requestId: String, status: String, reviewedBy: String) {
+        firestore.collection("groupRequests").document(requestId).update(
+            "status", status,
+            "reviewedBy", reviewedBy,
+            "reviewedAt", Timestamp.now(),
+            "updatedAt", Timestamp.now()
+        ).await()
+    }
+
+    /**
+     * Fetches all media attachments shared within a group.
+     */
+    fun getGroupMedia(groupId: String): Flow<List<GroupAttachment>> {
+        return firestore.collection("groups").document(groupId)
+            .collection("messages")
+            .whereNotEqualTo("attachments", emptyList<GroupAttachment>())
+            .orderBy("attachments")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .snapshots()
+            .map { snap ->
+                snap.documents.flatMap { doc ->
+                    val message = doc.toObject(GroupMessage::class.java)
+                    message?.attachments ?: emptyList()
+                }
+            }
     }
 }

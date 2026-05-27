@@ -20,11 +20,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.data.models.Tribe
 import dev.bti.kdym.data.models.TribeWarEvent
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
@@ -77,7 +76,7 @@ fun AddScoreScreen(
                     color = Color.White,
                     fontSize = 44.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     lineHeight = 44.sp
                 )
 
@@ -116,7 +115,7 @@ fun AddScoreScreen(
                         color = Color(0xFF10B981),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         modifier = Modifier.weight(1f)
                     )
                     Row(
@@ -158,7 +157,7 @@ fun AddScoreScreen(
                     shape = RoundedCornerShape(28.dp),
                     enabled = selectedTribe != null && reason.isNotBlank()
                 ) {
-                    Text(text = "ADD SCORE", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                    Text(text = "ADD SCORE", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                 }
 
                 Spacer(modifier = Modifier.height(140.dp))
@@ -195,7 +194,7 @@ fun PickerField(text: String, onClick: () -> Unit) {
         shape = RoundedCornerShape(24.dp)
     ) {
         Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(text = text, color = Color.White, modifier = Modifier.weight(1f), fontFamily = RubikFontFamily)
+            Text(text = text, color = Color.White, modifier = Modifier.weight(1f), fontFamily = QuickSandFontFamily)
             Icon(imageVector = Icons.Default.UnfoldMore, contentDescription = null, tint = TextSecondary)
         }
     }
@@ -216,14 +215,14 @@ fun <T> PickerModal(
         scrimColor = Color.Black.copy(0.6f)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(text = title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+            Text(text = title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
             Spacer(modifier = Modifier.height(16.dp))
             items.forEach { item ->
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable { onItemSelected(item) },
                     color = Color.Transparent
                 ) {
-                    Text(text = itemLabel(item), color = Color.White, modifier = Modifier.padding(16.dp), fontSize = 16.sp, fontFamily = RubikFontFamily)
+                    Text(text = itemLabel(item), color = Color.White, modifier = Modifier.padding(16.dp), fontSize = 16.sp, fontFamily = QuickSandFontFamily)
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))

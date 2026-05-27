@@ -1,23 +1,33 @@
 package dev.bti.kdym.data.repositories
 
 import android.util.Log
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
-import dev.bti.kdym.data.models.Tribe
+import dev.bti.kdym.data.local.TribeDao
+import dev.bti.kdym.data.local.toEntity
+import dev.bti.kdym.data.local.toModel
 import dev.bti.kdym.data.models.ScoreEntry
+import dev.bti.kdym.data.models.Tribe
 import dev.bti.kdym.data.models.TribeWarEvent
-import com.google.firebase.firestore.FieldValue
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Repository for managing Tribes and Tribe Wars related data.
+ * Data is structured under camp documents: camps/{campId}/tribes/{tribeId}.
+ */
 class TribeRepository(
+    private val tribeDao: TribeDao? = null,
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    /**
+     * Returns a stream of tribes for a specific camp.
+     * Prioritizes local cache while syncing with network updates.
+     */
     fun getTribesForCamp(campId: String): Flow<List<Tribe>> {
-        return firestore.collection("camps")
+        val networkFlow = firestore.collection("camps")
             .document(campId)
             .collection("tribes")
             .whereEqualTo("isActive", true)
@@ -31,8 +41,23 @@ class TribeRepository(
                     )
                 }
             }
+            .onEach { tribes ->
+                tribeDao?.insertTribes(tribes.map { it.toEntity() })
+            }
+
+        return if (tribeDao != null) {
+            combine(
+                tribeDao.getTribes().map { entities -> entities.map { it.toModel() } },
+                networkFlow
+            ) { cached, network -> network.ifEmpty { cached } }
+        } else {
+            networkFlow
+        }
     }
 
+    /**
+     * Registers a new tribe in the specified camp.
+     */
     suspend fun createTribe(tribe: Tribe) {
         val campId = tribe.campId.ifEmpty { "camp_2026" }
         val ref = firestore.collection("camps")
@@ -43,6 +68,9 @@ class TribeRepository(
         ref.set(tribe.copy(id = ref.id)).await()
     }
 
+    /**
+     * Updates an existing tribe's metadata.
+     */
     suspend fun updateTribe(tribe: Tribe) {
         val campId = tribe.campId.ifEmpty { "camp_2026" }
         firestore.collection("camps")
@@ -53,8 +81,11 @@ class TribeRepository(
             .await()
     }
 
+    /**
+     * Awards points to a tribe and records the transaction.
+     * Uses a Firestore transaction to ensure the tribe's total points and the score entry are written together.
+     */
     suspend fun addScoreEntry(entry: ScoreEntry) {
-        Log.d("TribeRepo", "tribeId=${entry.tribeId}")
         val campId = entry.campId.ifEmpty { "camp_2026" }
         val tribeRef = firestore.collection("camps")
             .document(campId)
@@ -72,6 +103,9 @@ class TribeRepository(
         }.await()
     }
 
+    /**
+     * Returns a real-time stream of tribe war competition events.
+     */
     fun getTribeWarEvents(campId: String): Flow<List<TribeWarEvent>> {
         return firestore.collection("camps")
             .document(campId)
@@ -81,6 +115,9 @@ class TribeRepository(
             .map { it.toObjects(TribeWarEvent::class.java) }
     }
 
+    /**
+     * Creates a new tribe war event (competition).
+     */
     suspend fun createTribeWarEvent(event: TribeWarEvent) {
         val campId = event.campId.ifEmpty { "camp_2026" }
         val ref = firestore.collection("camps")
@@ -89,5 +126,18 @@ class TribeRepository(
             .document()
         
         ref.set(event.copy(id = ref.id)).await()
+    }
+
+    /**
+     * Updates an existing tribe war event.
+     */
+    suspend fun updateTribeWarEvent(event: TribeWarEvent) {
+        val campId = event.campId.ifEmpty { "camp_2026" }
+        firestore.collection("camps")
+            .document(campId)
+            .collection("tribe_events")
+            .document(event.id)
+            .set(event)
+            .await()
     }
 }

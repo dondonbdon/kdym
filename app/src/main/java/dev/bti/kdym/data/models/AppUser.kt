@@ -1,15 +1,30 @@
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.PropertyName
+import kotlinx.serialization.Serializable
+import dev.bti.kdym.data.local.serializers.TimestampSerializer
 
+/**
+ * Represents a user of the KDYM application.
+ * Contains profile information, role-based permissions, and camp-specific associations.
+ */
+@Serializable
+@IgnoreExtraProperties
 data class AppUser(
     val uid: String = "",
     val displayName: String = "",
+    val username: String = "",
     val email: String = "",
     val photoURL: String? = null,
     val phoneNumber: String? = null,
     val bio: String? = null,
+
+    val churchId: String? = null,
+    val churchName: String? = null,
+    val churchCity: String? = null,
+    val pastorName: String? = null,
 
     val role: String = "public",
     val accessStatus: String = "public",
@@ -20,25 +35,49 @@ data class AppUser(
 
     val requestedCampId: String? = null,
     val requestedRole: String? = null,
+    @Serializable(with = TimestampSerializer::class)
     val requestedAt: Timestamp? = null,
+
+    val guessedTribe: String? = null,
 
     @get:PropertyName("isAdmin")
     @set:PropertyName("isAdmin")
     var isAdmin: Boolean = false,
+
     @get:PropertyName("isLeader")
     @set:PropertyName("isLeader")
     var isLeader: Boolean = false,
 
+    @get:PropertyName("isDeleted")
+    @set:PropertyName("isDeleted")
+    var isDeleted: Boolean = false,
+
     val fcmTokens: List<String>? = emptyList(),
     val notificationPreferences: NotificationPreferences? = NotificationPreferences(),
 
+    @Serializable(with = TimestampSerializer::class)
     val createdAt: Timestamp? = null,
+    @Serializable(with = TimestampSerializer::class)
     val updatedAt: Timestamp? = null,
-    val lastActiveAt: Timestamp? = null
+    @Serializable(with = TimestampSerializer::class)
+    val lastActiveAt: Timestamp? = null,
+    var phoneVerified: Boolean = false,
+    var emailVerified: Boolean = false,
+    var reportCount: Int = 0,
 ) {
+    /**
+     * Helper to get the strongly-typed role.
+     */
     val roleEnum: UserRole get() = UserRole.fromString(role)
+
+    /**
+     * Helper to get the strongly-typed access status.
+     */
     val statusEnum: AccessStatus get() = AccessStatus.fromString(accessStatus)
 
+    /**
+     * Generates initials from the display name for use in placeholders.
+     */
     val initials: String
         get() {
             val parts = displayName.split(" ").filter { it.isNotBlank() }
@@ -51,9 +90,34 @@ data class AppUser(
             }
         }
 
+    /**
+     * Whether the user is fully approved and can view protected camp content.
+     */
     val hasApprovedCampAccess: Boolean
         get() = accessStatus == "approved" && roleEnum.canAccessCampContent
 
+    // =========================================================================
+    // PERMISSION HELPERS: Bridging Enum Roles and Boolean Flags
+    // =========================================================================
+
     val hasCommandAccess: Boolean
-        get() = roleEnum.canAccessCommand || isAdmin || email == "don@don.don"
+        get() = roleEnum.canAccessCommand || isAdmin || isLeader || email == "don@don.don"
+
+    val canManageCampSettings: Boolean
+        get() = isAdmin || roleEnum.canManageCampSettings
+
+    val canManageApprovals: Boolean
+        get() = isAdmin || isLeader || roleEnum.canManageApprovals
+
+    val canManageTribes: Boolean
+        get() = isAdmin || isLeader || roleEnum.canManageTribes
+
+    val canManagePoints: Boolean
+        get() = isAdmin || isLeader || roleEnum.canManagePoints
+
+    val canManageAnnouncements: Boolean
+        get() = isAdmin || isLeader || roleEnum.canManageAnnouncements
+
+    val canManageGroups: Boolean
+        get() = isAdmin || isLeader || roleEnum.canManageGroups
 }

@@ -16,8 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.PlayItem
-import dev.bti.kdym.ui.theme.RubikFontFamily
-import dev.bti.kdym.ui.theme.TextSecondary
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 
 @Composable
 fun FeaturedWideMediaCard(playItem: PlayItem, modifier: Modifier = Modifier) {
@@ -44,7 +43,7 @@ fun FeaturedWideMediaCard(playItem: PlayItem, modifier: Modifier = Modifier) {
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
             
@@ -80,15 +79,15 @@ fun VerticalMediaCard(playItem: PlayItem, modifier: Modifier = Modifier) {
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     maxLines = 2
                 )
-                Text(
-                    text = playItem.subtitle ?: "",
-                    color = TextSecondary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium
-                )
+//                Text(
+//                    text = playItem. ?: "",
+//                    color = TextSecondary,
+//                    fontSize = 10.sp,
+//                    fontWeight = FontWeight.Medium
+//                )
             }
         }
     }

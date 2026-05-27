@@ -6,45 +6,51 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import dev.bti.kdym.data.models.AppGroup
 import dev.bti.kdym.data.models.AppGroupType
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
+import dev.bti.kdym.ui.utils.GroupIconHelper
+import dev.bti.kdym.ui.utils.TimeUtils
 
 @Composable
 fun GroupListCard(
     group: AppGroup,
     modifier: Modifier = Modifier,
+    currentUserId: String? = null,
     showChevron: Boolean = true,
     onClick: () -> Unit = {}
 ) {
-    val icon = when (group.type) {
-        AppGroupType.tribe -> Icons.Default.Flag
-        else -> Icons.AutoMirrored.Filled.Chat
+    val isTribeGroup = group.type == AppGroupType.tribe
+    val icon = if (isTribeGroup) {
+        GroupIconHelper.getGroupIcon(group.iconName)
+    } else {
+        GroupIconHelper.getGroupIcon(group.iconName)
     }
-
-    val iconBgColor = when (group.type) {
-        AppGroupType.tribe -> Color(0xFFEAB308).copy(alpha = 0.1f)
-        else -> Color(0xFF22D3EE).copy(alpha = 0.1f)
+    
+    val color = remember(group.colorHex, isTribeGroup) {
+        try {
+            if (group.colorHex != null) Color(group.colorHex.toColorInt())
+            else Color(0xFF22D3EE)
+        } catch (_: Exception) {
+            Color(0xFF22D3EE)
+        }
     }
-
-    val iconTint = when (group.type) {
-        AppGroupType.tribe -> Color(0xFFEAB308)
-        else -> Color(0xFF22D3EE)
-    }
+    val unreadCount = currentUserId?.let { group.unreadCounts[it] } ?: 0
 
     GlassCard(
         modifier = modifier
@@ -62,15 +68,34 @@ fun GroupListCard(
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .background(iconBgColor, RoundedCornerShape(16.dp)),
+                    .background(color.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(28.dp)
+                    tint = color,
+                    modifier = Modifier.size(32.dp)
                 )
+                
+                if (unreadCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 4.dp, y = (-4).dp)
+                            .size(20.dp)
+                            .background(Color.Red, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = unreadCount.toString(),
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = QuickSandFontFamily
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -78,40 +103,71 @@ fun GroupListCard(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = group.name,
+                        text = group.name.uppercase(),
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    if (group.isOfficial) {
+                    if (group.isOfficial || isTribeGroup) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
-                            imageVector = Icons.Default.Verified,
+                            painter = painterResource(id = if (isTribeGroup) dev.bti.kdym.R.drawable.ic_tribe_checkmark else dev.bti.kdym.R.drawable.ic_checkmark),
                             contentDescription = null,
-                            tint = Color(0xFF22D3EE),
+                            tint = if (isTribeGroup) color else Color(0xFF22D3EE),
                             modifier = Modifier.size(16.dp)
                         )
                     }
                 }
                 
+                Spacer(modifier = Modifier.height(2.dp))
+
+                val subText = if (group.lastMessageText != null) {
+                    val sender = if (group.lastMessageSenderName != null) "${group.lastMessageSenderName}: " else ""
+                    "$sender${group.lastMessageText}"
+                } else {
+                    group.description ?: ""
+                }
+
+                Text(
+                    text = subText,
+                    color = TextSecondary,
+                    fontSize = 14.sp,
+                    fontFamily = QuickSandFontFamily,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        color = Color.White.copy(0.1f),
-                        shape = CircleShape
-                    ) {
-                        Text(
-                            text = "${group.memberCount} MEMBERS",
-                            color = Color.White.copy(0.7f),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            letterSpacing = 0.5.sp,
-                            fontFamily = RubikFontFamily
-                        )
-                    }
+                    val timeText = TimeUtils.formatRelativeTime(group.lastMessageAt ?: group.createdAt)
+                    Text(
+                        text = timeText,
+                        color = TextSecondary.copy(alpha = 0.5f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "•",
+                        color = TextSecondary.copy(alpha = 0.5f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "${group.memberCount} MEMBERS",
+                        color = TextSecondary.copy(alpha = 0.5f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
 
@@ -124,21 +180,5 @@ fun GroupListCard(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun Surface(
-    modifier: Modifier = Modifier,
-    color: Color,
-    shape: androidx.compose.ui.graphics.Shape,
-    content: @Composable () -> Unit
-) {
-    androidx.compose.material3.Surface(
-        modifier = modifier,
-        color = color,
-        shape = shape
-    ) {
-        content()
     }
 }

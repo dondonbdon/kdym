@@ -22,7 +22,7 @@ import androidx.core.net.toUri
 import dev.bti.kdym.R
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.theme.RedAccent
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
 @Composable
@@ -51,7 +51,7 @@ fun RegistrationCard() {
                         color = RedAccent,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
                 Text(
@@ -59,7 +59,7 @@ fun RegistrationCard() {
                     color = TextSecondary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -70,7 +70,7 @@ fun RegistrationCard() {
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -80,7 +80,7 @@ fun RegistrationCard() {
                 color = TextSecondary,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -113,7 +113,7 @@ fun RegistrationCard() {
                     Text(
                         text = "REGISTER FOR CAMP",
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,

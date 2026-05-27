@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.*
@@ -22,11 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import dev.bti.kdym.data.models.AppUser
-import dev.bti.kdym.data.models.Tribe
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
-import dev.bti.kdym.ui.components.ScreenHeader
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
@@ -35,11 +35,17 @@ fun TribeDetailsScreen(
     tribeId: String,
     onNavigateBack: () -> Unit,
     onManagePeople: (String) -> Unit,
+    onNavigateToChat: (String) -> Unit,
     viewModel: AdminViewModel
 ) {
     val tribes by viewModel.tribes.collectAsState()
     val tribe = remember(tribeId, tribes) { tribes.find { it.id == tribeId } }
     val allUsers by viewModel.allUsers.collectAsState()
+    val groups by viewModel.groups.collectAsState()
+
+    val tribeGroup = remember(tribe, groups) {
+        groups.find { it.tribeId == tribeId }
+    }
 
     val tribeLeaders = remember(tribe, allUsers) {
         allUsers.filter { it.uid in (tribe?.leaderIds ?: emptyList()) }
@@ -62,12 +68,81 @@ fun TribeDetailsScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            ScreenHeader(
-                onNavigateBack = onNavigateBack,
-                icon = Icons.Default.LocalFireDepartment,
-                title = tribe?.name?.uppercase() ?: "TRIBE",
-                subtitle = "Camp tribe"
-            )
+            // New Back Button Style
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onNavigateBack,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.1f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(Color(0xFF22D3EE).copy(0.1f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocalFireDepartment,
+                        contentDescription = null,
+                        tint = Color(0xFF22D3EE),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = tribe?.name?.uppercase() ?: "TRIBE",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Text(
+                        text = "Camp tribe",
+                        color = TextSecondary,
+                        fontSize = 14.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+                
+                if (tribeGroup != null) {
+                    IconButton(
+                        onClick = { onNavigateToChat(tribeGroup.id) },
+                        modifier = Modifier
+                            .background(Color.White.copy(0.1f), CircleShape)
+                    ) {
+                        Icon(imageVector = Icons.Default.Forum, contentDescription = "Tribe Chat", tint = Color.White)
+                    }
+                }
+            }
 
             LazyColumn(
                 modifier = Modifier
@@ -88,20 +163,6 @@ fun TribeDetailsScreen(
                     }
                 }
 
-                // Official Group Status
-                item {
-                    GlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = Color.White.copy(0.05f)) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Groups, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(text = "Official group pending", color = Color(0xFFFBBF24), fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-                                Text(text = "The Cloud Function will create the official tribe group automatically after this tribe syncs.", color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
-                            }
-                        }
-                    }
-                }
-
                 // Manage People Button
                 item {
                     Button(
@@ -113,7 +174,7 @@ fun TribeDetailsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(imageVector = Icons.Default.Groups, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "MANAGE TRIBE PEOPLE", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                            Text(text = "MANAGE TRIBE PEOPLE", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                         }
                     }
                 }
@@ -122,7 +183,7 @@ fun TribeDetailsScreen(
                 item {
                     Text(text = "LEADERSHIP", color = Color(0xFFEF4444), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "TRIBE LEADERS", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                    Text(text = "TRIBE LEADERS", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                 }
 
                 if (tribeLeaders.isEmpty()) {
@@ -140,7 +201,7 @@ fun TribeDetailsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = "CAMPERS", color = Color(0xFFEF4444), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "TRIBE MEMBERS", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                    Text(text = "TRIBE MEMBERS", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                 }
 
                 if (tribeMembers.isEmpty()) {
@@ -163,7 +224,7 @@ fun TribeStatCard(label: String, value: String, color: Color, modifier: Modifier
         Column(modifier = Modifier.padding(12.dp)) {
             Text(text = label, color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = value, color = color, fontSize = 24.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+            Text(text = value, color = color, fontSize = 24.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
         }
     }
 }
@@ -177,8 +238,8 @@ fun TribeUserItem(user: AppUser, role: String, color: Color) {
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-                Text(text = user.email, color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                Text(text = user.email, color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
             }
             Surface(color = color.copy(0.1f), shape = RoundedCornerShape(12.dp)) {
                 Text(

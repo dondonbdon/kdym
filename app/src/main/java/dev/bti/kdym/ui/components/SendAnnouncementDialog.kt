@@ -22,7 +22,7 @@ import androidx.compose.ui.window.Dialog
 import dev.bti.kdym.data.models.Announcement
 import dev.bti.kdym.data.models.AnnouncementAudience
 import dev.bti.kdym.data.models.AnnouncementPriority
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
 @Composable
@@ -59,7 +59,7 @@ fun SendAnnouncementDialog(
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         lineHeight = 32.sp
                     )
                     IconButton(
@@ -122,7 +122,7 @@ fun SendAnnouncementDialog(
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Everyone", color = Color.White, modifier = Modifier.weight(1f), fontFamily = RubikFontFamily)
+                        Text(text = "Everyone", color = Color.White, modifier = Modifier.weight(1f), fontFamily = QuickSandFontFamily)
                         Icon(imageVector = Icons.Default.UnfoldMore, contentDescription = null, tint = TextSecondary)
                     }
                 }
@@ -148,7 +148,7 @@ fun SendAnnouncementDialog(
                         Text(
                             text = if (announcement == null) "PUBLISH ANNOUNCEMENT" else "UPDATE ANNOUNCEMENT", 
                             fontWeight = FontWeight.Black, 
-                            fontFamily = RubikFontFamily
+                            fontFamily = QuickSandFontFamily
                         )
                     }
                 }
@@ -171,7 +171,7 @@ fun PriorityButton(label: String, isSelected: Boolean, modifier: Modifier = Modi
                 color = if (isSelected) Color.White else TextSecondary, 
                 fontSize = 11.sp, 
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 letterSpacing = 1.sp
             )
         }
@@ -182,8 +182,8 @@ fun PriorityButton(label: String, isSelected: Boolean, modifier: Modifier = Modi
 fun ToggleOption(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-            Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+            Text(text = title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+            Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
         }
         Switch(
             checked = checked, 

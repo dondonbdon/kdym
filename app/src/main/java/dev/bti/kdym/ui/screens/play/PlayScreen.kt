@@ -1,39 +1,63 @@
 package dev.bti.kdym.ui.screens.play
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import dev.bti.kdym.R
-import dev.bti.kdym.ui.components.GlassCard
-import dev.bti.kdym.ui.components.OutpourBackground
-import dev.bti.kdym.ui.components.ScreenHeader
-import dev.bti.kdym.ui.components.SegmentedControl
+import dev.bti.kdym.data.models.PlayItem
+import dev.bti.kdym.ui.components.*
+import dev.bti.kdym.ui.components.ShimmerItem
 import dev.bti.kdym.ui.theme.RedAccent
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.RubikGlitchFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
 
 @Composable
 fun PlayScreen(
+    onNavigateToCreatePlayItem: () -> Unit,
+    onNavigateToClips: (String) -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
     var selectedSegment by remember { mutableStateOf("VIDEOS") }
     val appConfig by viewModel.appConfig.collectAsState()
+    val user by viewModel.user.collectAsState()
     val isCampMode = appConfig?.campModeEnabled ?: false
+    
+    val allPlayItems by viewModel.playItems.collectAsState()
+    val featuredPlayItems by viewModel.featuredPlayItems.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    val filteredPlayItems = remember(allPlayItems, selectedSegment) {
+        val kind = when (selectedSegment) {
+            "VIDEOS" -> "video"
+            "AUDIO" -> "audio"
+            "GALLERY" -> "gallery"
+            else -> "video"
+        }
+        allPlayItems.filter { item ->
+            item.kind == kind
+        }
+    }
 
     OutpourBackground {
         Column(
@@ -53,7 +77,7 @@ fun PlayScreen(
 
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
-                    PlayTopBar()
+                    PlayTopBar(onAddClick = onNavigateToCreatePlayItem, showAdd = user?.roleEnum?.canManagePlay == true)
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
@@ -64,33 +88,37 @@ fun PlayScreen(
                         onSegmentSelected = { selectedSegment = it }
                     )
                 }
-
+                
                 // Dynamic content based on the selected segment
                 when (selectedSegment) {
                     "VIDEOS" -> {
                         item {
-                            FeaturedMediaCard()
+                            FeaturedMediaCard(featuredPlayItems.find { it.kind == "video" })
                         }
 
                         item {
                             SectionHeader(
-                                label = "SHORTFORM",
-                                title = "REELS & MOMENTS"
+                                label = "VIDEO",
+                                title = "CLIPS & MOMENTS"
                             )
                         }
 
+                        // Grid of clips
                         item {
-                            NoContentCard(
-                                icon = Icons.Default.PlayCircle,
-                                message = "No videos yet",
-                                description = "Admins can post vertical videos, recaps, and clips from their gallery."
-                            )
+                            if (filteredPlayItems.isEmpty() && uiState.isLoading) {
+                                PlayGridShimmer()
+                            } else {
+                                ClipsGrid(
+                                    items = filteredPlayItems,
+                                    onClipClick = { id -> onNavigateToClips("$id/video") }
+                                )
+                            }
                         }
                     }
 
                     "AUDIO" -> {
                         item {
-                            FeaturedMediaCard()
+                            FeaturedMediaCard(featuredPlayItems.find { it.kind == "audio" })
                         }
 
                         item {
@@ -100,12 +128,21 @@ fun PlayScreen(
                             )
                         }
 
-                        item {
-                            NoContentCard(
-                                icon = Icons.Default.Audiotrack,
-                                message = "No audio yet",
-                                description = "Admins can post audio recordings, messages, and archive tracks."
-                            )
+                        if (filteredPlayItems.isEmpty()) {
+                            item {
+                                NoContentCard(
+                                    icon = Icons.Default.Audiotrack,
+                                    message = "No audio yet",
+                                    description = "Admins can post audio recordings, messages, and archive tracks."
+                                )
+                            }
+                        } else {
+                            items(filteredPlayItems) { item ->
+                                AudioClipCard(
+                                    item = item,
+                                    onClick = { item.id?.let { onNavigateToClips("$it/audio") } }
+                                )
+                            }
                         }
                     }
 
@@ -117,14 +154,214 @@ fun PlayScreen(
                             )
                         }
 
-                        item {
-                            NoContentCard(
-                                icon = Icons.Default.PhotoLibrary,
-                                message = "No photos yet",
-                                description = "Admins can upload full albums and high-quality photo drops."
-                            )
+                        if (filteredPlayItems.isEmpty()) {
+                            item {
+                                NoContentCard(
+                                    icon = Icons.Default.PhotoLibrary,
+                                    message = "No photos yet",
+                                    description = "Admins can upload full albums and high-quality photo drops."
+                                )
+                            }
+                        } else {
+                            // Grid for gallery
+                            item {
+                                if (filteredPlayItems.isEmpty() && uiState.isLoading) {
+                                    PlayGridShimmer(columns = 3)
+                                } else {
+                                    GalleryGrid(
+                                        items = filteredPlayItems,
+                                        onItemClick = { item -> item.id?.let { onNavigateToClips("${item.id}/gallery") } }
+                                    )
+                                }
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlayGridShimmer(columns: Int = 2) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        repeat(3) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                repeat(columns) {
+                    ShimmerItem(modifier = Modifier.weight(1f).aspectRatio(if (columns == 2) 0.7f else 1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ClipsGrid(items: List<PlayItem>, onClipClick: (String) -> Unit) {
+    if (items.isEmpty()) {
+        NoContentCard(
+            icon = Icons.Default.PlayCircle,
+            message = "No videos yet",
+            description = "Admins can post vertical videos, recaps, and clips from their gallery."
+        )
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        items.chunked(2).forEach { rowItems ->
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                rowItems.forEach { item ->
+                    ClipCard(
+                        modifier = Modifier.weight(1f),
+                        item = item,
+                        onClick = { item.id?.let { onClipClick(it) } }
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GalleryGrid(items: List<PlayItem>, onItemClick: (PlayItem) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        items.chunked(3).forEach { rowItems ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowItems.forEach { item ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(0.05f))
+                            .clickable { onItemClick(item) }
+                    ) {
+                        AsyncImage(
+                            model = item.displayThumbnailURL,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+                repeat(3 - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AudioClipCard(
+    item: PlayItem,
+    onClick: () -> Unit
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        backgroundColor = Color.Black.copy(0.3f),
+        cornerRadius = 24.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(48.dp),
+                color = Color.White.copy(0.1f),
+                shape = CircleShape
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = item.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                Text(text = item.publishedAt?.toDate()?.let { 
+                    java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(it)
+                } ?: "N/A", color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+            }
+            item.durationText?.let {
+                Text(text = it, color = Color.White.copy(0.6f), fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+            }
+        }
+    }
+}
+
+@Composable
+fun ClipCard(
+    modifier: Modifier = Modifier,
+    item: PlayItem,
+    onClick: () -> Unit
+) {
+    GlassCard(
+        modifier = modifier
+            .height(240.dp)
+            .clickable { onClick() },
+        backgroundColor = Color.Black.copy(0.3f),
+        contentPadding = 0.dp
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (item.displayThumbnailURL != null) {
+                AsyncImage(
+                    model = item.displayThumbnailURL,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(0.05f)))
+            }
+            
+            // Duration Badge (Top Right)
+            item.durationText?.let { duration ->
+                Surface(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                    color = Color.Black.copy(0.6f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = duration,
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+            }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(imageVector = Icons.Default.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                
+                Column {
+                    Text(
+                        text = item.title,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = QuickSandFontFamily,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = item.publishedAt?.toDate()?.let { 
+                            java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(it)
+                        } ?: "N/A",
+                        color = TextSecondary,
+                        fontSize = 10.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
         }
@@ -140,20 +377,20 @@ fun SectionHeader(label: String, title: String) {
             fontSize = 10.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 2.sp,
-            fontFamily = RubikFontFamily
+            fontFamily = QuickSandFontFamily
         )
         Text(
             text = title,
             color = Color.White,
             fontSize = 32.sp,
             fontWeight = FontWeight.Black,
-            fontFamily = RubikFontFamily
+            fontFamily = QuickSandFontFamily
         )
     }
 }
 
 @Composable
-fun PlayTopBar() {
+fun PlayTopBar(onAddClick: () -> Unit, showAdd: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -173,7 +410,7 @@ fun PlayTopBar() {
                     color = Color(0xFF22D3EE),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
             Text(
@@ -181,7 +418,7 @@ fun PlayTopBar() {
                 color = Color.White,
                 fontSize = 44.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 lineHeight = 44.sp
             )
             Text(
@@ -196,37 +433,50 @@ fun PlayTopBar() {
                 text = "Videos, worship clips, shortform moments, audio archives, and gallery drops.",
                 color = TextSecondary,
                 fontSize = 16.sp,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
         }
 
-        Surface(
-            modifier = Modifier.size(48.dp),
-            color = Color.White,
-            shape = CircleShape
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Color.Black,
-                    modifier = Modifier.size(24.dp)
-                )
+        if (showAdd) {
+            Surface(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clickable { onAddClick() },
+                color = Color.White,
+                shape = CircleShape
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color.Black,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun FeaturedMediaCard() {
+fun FeaturedMediaCard(item: PlayItem? = null) {
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(240.dp),
+            .aspectRatio(16/9f),
         backgroundColor = Color.Black.copy(alpha = 0.3f),
         contentPadding = 0.dp
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            if (item?.thumbnailURL != null) {
+                AsyncImage(
+                    model = item.thumbnailURL,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
             // Background Image Placeholder/Gradient
             Box(
                 modifier = Modifier
@@ -255,7 +505,7 @@ fun FeaturedMediaCard() {
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
 
                     Surface(
@@ -282,17 +532,17 @@ fun FeaturedMediaCard() {
                         color = Color.White.copy(alpha = 0.5f)
                     )
                     Text(
-                        text = "Outpour Media",
+                        text = item?.title ?: "Outpour Media",
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     Text(
-                        text = "Recaps. Messages. Audio.",
+                        text = item?.description ?: "Recaps. Messages. Audio.",
                         color = TextSecondary,
                         fontSize = 16.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
             }
@@ -304,7 +554,7 @@ fun FeaturedMediaCard() {
 fun NoContentCard(icon: androidx.compose.ui.graphics.vector.ImageVector, message: String, description: String) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        backgroundColor = Color.Black.copy(alpha = 0.3f)
+        backgroundColor = Color.Black.copy(0.3f)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Icon(
@@ -319,7 +569,7 @@ fun NoContentCard(icon: androidx.compose.ui.graphics.vector.ImageVector, message
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -327,7 +577,7 @@ fun NoContentCard(icon: androidx.compose.ui.graphics.vector.ImageVector, message
                 color = TextSecondary,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
         }
     }

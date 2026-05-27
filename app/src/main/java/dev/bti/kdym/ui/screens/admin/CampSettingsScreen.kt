@@ -8,7 +8,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Facebook
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.*
@@ -20,20 +23,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.AppConfig
+import dev.bti.kdym.data.models.NewAccountAccessDefault
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
 @Composable
-fun NewUserOption(title: String, subtitle: String, selected: Boolean) {
+fun NewUserOption(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { },
+            .clickable { onClick() }, // <-- Trigger callback here
         color = if (selected) Color.White.copy(0.05f) else Color.Transparent,
         shape = RoundedCornerShape(16.dp),
-        border = if (selected) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF22D3EE).copy(0.3f)) else null
+        border = if (selected) androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color(0xFF22D3EE).copy(0.3f)
+        ) else null
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -42,17 +54,36 @@ fun NewUserOption(title: String, subtitle: String, selected: Boolean) {
             Box(
                 modifier = Modifier
                     .size(24.dp)
-                    .background(if (selected) Color(0xFF22D3EE) else Color.White.copy(0.1f), CircleShape),
+                    .background(
+                        if (selected) Color(0xFF22D3EE) else Color.White.copy(0.1f),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (selected) {
-                    Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-                Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = QuickSandFontFamily
+                )
+                Text(
+                    text = subtitle,
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    fontFamily = QuickSandFontFamily
+                )
             }
         }
     }
@@ -74,12 +105,36 @@ fun CampSettingsScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            ScreenHeader(
-                onNavigateBack = onNavigateBack,
-                icon = Icons.Default.LocalFireDepartment,
-                title = "CAMP SETTINGS",
-                subtitle = "Control how the app behaves during camp."
-            )
+            // New Back Button Style
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onNavigateBack,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.1f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+            }
 
             Column(
                 modifier = Modifier
@@ -87,6 +142,37 @@ fun CampSettingsScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
             ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(Color(0xFFEF4444).copy(0.1f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalFireDepartment,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "CAMP SETTINGS",
+                            color = Color.White,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Text(
+                            text = "Control how the app behaves during camp.",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(32.dp))
 
                 CommandSwitch(
@@ -113,28 +199,113 @@ fun CampSettingsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "NEW USERS",
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Default New Account Access", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-                        Text(text = "Choose what happens when someone creates a new KDYM account.", color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                        Text(
+                            text = "Default New Account Access",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Text(
+                            text = "Choose what happens when someone creates a new KDYM account.",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        
-                        NewUserOption("Public Account", "New users start with general KDYM access only.", true)
+
+                        NewUserOption(
+                            title = "Public Account",
+                            subtitle = "New users start with general KDYM access only.",
+                            selected = localConfig.newAccountAccessDefault == NewAccountAccessDefault.PUBLIC,
+                            onClick = {
+                                localConfig =
+                                    localConfig.copy(newAccountAccessDefault = NewAccountAccessDefault.PUBLIC)
+                            }
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
-                        NewUserOption("Pending Camper", "New users become camper requests awaiting approval.", false)
+
+                        NewUserOption(
+                            title = "Pending Camper",
+                            subtitle = "New users become camper requests awaiting approval.",
+                            selected = localConfig.newAccountAccessDefault == NewAccountAccessDefault.PENDING_CAMPER,
+                            onClick = {
+                                localConfig =
+                                    localConfig.copy(newAccountAccessDefault = NewAccountAccessDefault.PENDING_CAMPER)
+                            }
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
-                        NewUserOption("Approved Camper", "New users immediately receive approved camper access.", false)
+
+                        NewUserOption(
+                            title = "Approved Camper",
+                            subtitle = "New users immediately receive approved camper access.",
+                            selected = localConfig.newAccountAccessDefault == NewAccountAccessDefault.APPROVED_CAMPER,
+                            onClick = {
+                                localConfig =
+                                    localConfig.copy(newAccountAccessDefault = NewAccountAccessDefault.APPROVED_CAMPER)
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = "LIVE",
+                    color = Color(0xFFEF4444),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 2.sp,
+                    fontFamily = QuickSandFontFamily
+                )
+                Text(
+                    text = "FACEBOOK",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        CommandSwitch(
+                            title = "Facebook Live",
+                            description = "Show a live card on Home when a stream URL is available.",
+                            checked = localConfig.facebookLiveEnabled,
+                            onCheckedChange = { localConfig = localConfig.copy(facebookLiveEnabled = it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        CommandInputField(
+                            value = localConfig.facebookLiveURL ?: "",
+                            onValueChange = { localConfig = localConfig.copy(facebookLiveURL = it) },
+                            placeholder = "Stream URL",
+                            icon = Icons.Default.Link
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        CommandInputField(
+                            value = localConfig.facebookLiveTitle ?: "",
+                            onValueChange = { localConfig = localConfig.copy(facebookLiveTitle = it) },
+                            placeholder = "Live Title",
+                            icon = Icons.Default.Facebook
+                        )
                     }
                 }
 
@@ -146,7 +317,7 @@ fun CampSettingsScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Text(
@@ -154,7 +325,7 @@ fun CampSettingsScreen(
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -163,7 +334,9 @@ fun CampSettingsScreen(
                     title = "Public Registration Open",
                     description = "Show registration prompts and allow users to request camp access.",
                     checked = localConfig.publicRegistrationOpen,
-                    onCheckedChange = { localConfig = localConfig.copy(publicRegistrationOpen = it) }
+                    onCheckedChange = {
+                        localConfig = localConfig.copy(publicRegistrationOpen = it)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -172,7 +345,9 @@ fun CampSettingsScreen(
                     title = "Camp Schedule Visible",
                     description = "Approved campers can view camp schedule items.",
                     checked = localConfig.allowCampScheduleVisible,
-                    onCheckedChange = { localConfig = localConfig.copy(allowCampScheduleVisible = it) }
+                    onCheckedChange = {
+                        localConfig = localConfig.copy(allowCampScheduleVisible = it)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -218,7 +393,7 @@ fun CampSettingsScreen(
                     Text(
                         text = "SAVE CAMP SETTINGS",
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
 

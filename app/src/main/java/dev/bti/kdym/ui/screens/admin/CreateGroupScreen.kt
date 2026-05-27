@@ -22,7 +22,7 @@ import com.google.firebase.Timestamp
 import dev.bti.kdym.data.models.AppGroup
 import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
@@ -107,7 +107,7 @@ fun CreateGroupScreen(
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = groupType.title, color = Color.White, modifier = Modifier.weight(1f), fontFamily = RubikFontFamily)
+                            Text(text = groupType.title, color = Color.White, modifier = Modifier.weight(1f), fontFamily = QuickSandFontFamily)
                             Icon(imageVector = Icons.Default.UnfoldMore, contentDescription = null, tint = TextSecondary)
                         }
                     }
@@ -131,7 +131,7 @@ fun CreateGroupScreen(
                     ) {
                         Column {
                             Text(text = "PEOPLE", color = Color(0xFFEF4444), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                            Text(text = "ASSIGN ROLES", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                            Text(text = "ASSIGN ROLES", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                         }
                         IconButton(
                             onClick = { showUserPicker = true },
@@ -227,7 +227,7 @@ fun CreateGroupScreen(
                         shape = RoundedCornerShape(28.dp),
                         enabled = name.isNotBlank()
                     ) {
-                        Text(text = if (groupId == null) "CREATE GROUP" else "SAVE PERMISSIONS", fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                        Text(text = if (groupId == null) "CREATE GROUP" else "SAVE PERMISSIONS", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                     }
                 }
             }
@@ -242,8 +242,8 @@ fun ToggleRow(title: String, subtitle: String, checked: Boolean, onCheckedChange
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-            Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+            Text(text = title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+            Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
         }
         Switch(
             checked = checked, 

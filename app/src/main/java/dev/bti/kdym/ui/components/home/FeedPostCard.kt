@@ -26,7 +26,7 @@ import dev.bti.kdym.data.models.FeedPost
 import dev.bti.kdym.data.models.FeedPostPriority
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.theme.RedAccent
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import java.text.SimpleDateFormat
 import dev.bti.kdym.R
@@ -69,7 +69,7 @@ fun FeedPostCard(
                                 color = RedAccent,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Black,
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                         }
                     }
@@ -101,7 +101,7 @@ fun FeedPostCard(
                             ) else Color(0xFF22D3EE),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Black,
-                            fontFamily = RubikFontFamily
+                            fontFamily = QuickSandFontFamily
                         )
                     }
                 }
@@ -114,7 +114,7 @@ fun FeedPostCard(
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = RubikFontFamily,
+                fontFamily = QuickSandFontFamily,
                 lineHeight = 28.sp
             )
 
@@ -125,7 +125,7 @@ fun FeedPostCard(
                 color = TextSecondary,
                 fontSize = 15.sp,
                 lineHeight = 20.sp,
-                fontFamily = RubikFontFamily
+                fontFamily = QuickSandFontFamily
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -170,7 +170,7 @@ fun FeedPostCard(
                         text = post.commentCount.toString(),
                         color = TextSecondary,
                         fontSize = 12.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
             }
@@ -186,7 +186,7 @@ fun FeedPostCard(
                     color = TextSecondary.copy(alpha = 0.7f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 val formattedTime = SimpleDateFormat("HH:mm", LocalLocale.current.platformLocale)
@@ -196,7 +196,7 @@ fun FeedPostCard(
                     color = TextSecondary.copy(alpha = 0.7f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
         }
@@ -255,7 +255,7 @@ fun ReactionButton(
                     color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
         }

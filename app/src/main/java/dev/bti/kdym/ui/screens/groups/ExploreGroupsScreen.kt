@@ -4,10 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,13 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.AppGroup
+import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.GroupsViewModel
 
@@ -30,15 +29,27 @@ fun ExploreGroupsScreen(
     onNavigateBack: () -> Unit,
     viewModel: GroupsViewModel
 ) {
-    // For now, we use a placeholder list or fetch public groups if repo supports it
-    // The requirement is to show "JOIN GROUPS" (Image 1)
+    val allGroups by viewModel.groups.collectAsState()
+    val userRequests by viewModel.userRequests.collectAsState()
     
-    // Placeholder groups for demonstration based on Image 1
-    val placeholderGroups = listOf(
-        AppGroup(id = "1", name = "ANOTHER GROUP", description = "Leadership group", colorHex = "#22D3EE"),
-        AppGroup(id = "2", name = "SADASDSDADASDSDADSADASKD...", description = "Sadasdsadasdsadsadaskdjhasdjhsal...", colorHex = "#EF4444"),
-        AppGroup(id = "3", name = "DORM DADSD", description = "Asdsadas", colorHex = "#22D3EE")
-    )
+    val pendingGroupIds = remember(userRequests) { 
+        userRequests.filter { it.status == "pending" }.map { it.groupId }.toSet() 
+    }
+    
+    val publicGroups = remember(allGroups, pendingGroupIds) { 
+        val currentUserId = viewModel.currentUserId
+        allGroups.filter { 
+            it.isPublic && 
+            it.type != AppGroupType.tribe && 
+            it.id !in pendingGroupIds &&
+            currentUserId !in (it.memberIds + it.leaderIds)
+        } 
+    }
+    
+    val requestedGroups = remember(allGroups, userRequests) {
+        val pendingIds = userRequests.filter { it.status == "pending" }.map { it.groupId }
+        allGroups.filter { it.id in pendingIds }
+    }
 
     OutpourBackground {
         Column(
@@ -46,37 +57,36 @@ fun ExploreGroupsScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            // Header
+            // New Back Button Style
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "EXPLORE",
-                        color = Color.White,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
-                    )
-                    Text(
-                        text = "GROUPS",
-                        color = TextSecondary,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
-                    )
-                }
-                IconButton(
+                Button(
                     onClick = onNavigateBack,
-                    modifier = Modifier.background(Color.White.copy(0.1f), CircleShape)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.1f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
@@ -85,14 +95,14 @@ fun ExploreGroupsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "JOIN GROUPS",
                     color = Color.White,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
@@ -103,8 +113,54 @@ fun ExploreGroupsScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(placeholderGroups) { group ->
-                    ExploreGroupCard(group = group)
+                if (requestedGroups.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "PENDING REQUESTS",
+                            color = Color(0xFFEF4444),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
+                    }
+                    items(requestedGroups, key = { "pending_${it.id}" }) { group ->
+                        ExploreGroupCard(
+                            group = group,
+                            isRequested = true,
+                            onRequestJoin = {}
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                }
+
+                item {
+                    Text(
+                        text = "AVAILABLE GROUPS",
+                        color = Color(0xFFEF4444),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+                
+                if (publicGroups.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No new groups available to join at this time.",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    }
+                } else {
+                    items(publicGroups, key = { it.id }) { group ->
+                        ExploreGroupCard(
+                            group = group,
+                            onRequestJoin = { viewModel.requestJoinGroup(group) }
+                        )
+                    }
                 }
             }
         }
@@ -112,7 +168,14 @@ fun ExploreGroupsScreen(
 }
 
 @Composable
-fun ExploreGroupCard(group: AppGroup) {
+fun ExploreGroupCard(
+    group: AppGroup,
+    isRequested: Boolean = false,
+    onRequestJoin: () -> Unit
+) {
+    var requestedLocal by remember { mutableStateOf(false) }
+    val currentlyRequested = isRequested || requestedLocal
+
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         cornerRadius = 24.dp,
@@ -135,14 +198,14 @@ fun ExploreGroupCard(group: AppGroup) {
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         maxLines = 1
                     )
                     Text(
                         text = group.description ?: "",
                         color = TextSecondary,
                         fontSize = 12.sp,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         maxLines = 2
                     )
                 }
@@ -151,12 +214,24 @@ fun ExploreGroupCard(group: AppGroup) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { /* TODO: Request to join */ },
+                onClick = { 
+                    onRequestJoin()
+                    requestedLocal = true
+                },
                 modifier = Modifier.fillMaxWidth().height(44.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                shape = RoundedCornerShape(22.dp)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (currentlyRequested) Color.White.copy(0.1f) else Color.White, 
+                    contentColor = if (currentlyRequested) Color.White.copy(0.3f) else Color.Black
+                ),
+                shape = RoundedCornerShape(22.dp),
+                enabled = !currentlyRequested
             ) {
-                Text(text = "REQUEST TO JOIN", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                Text(
+                    text = if (currentlyRequested) "REQUESTED" else "REQUEST TO JOIN",
+                    fontWeight = FontWeight.Black, 
+                    fontSize = 12.sp, 
+                    fontFamily = QuickSandFontFamily
+                )
             }
         }
     }

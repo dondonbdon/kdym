@@ -1,6 +1,6 @@
 package dev.bti.kdym.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
@@ -21,14 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.KDYMEvent
 import dev.bti.kdym.ui.theme.RedAccent
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
-
-import androidx.compose.foundation.clickable
 
 @Composable
 fun EventListCard(
@@ -37,9 +34,11 @@ fun EventListCard(
     onClick: () -> Unit = {}
 ) {
     val accentColor = if (event.isCampEvent) Color(0xFF22D3EE) else RedAccent
-    
+
     GlassCard(
-        modifier = modifier.fillMaxWidth().clickable { onClick() },
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         backgroundColor = Color.Black.copy(alpha = 0.3f),
         cornerRadius = 24.dp,
         borderColor = accentColor.copy(alpha = 0.1f)
@@ -61,7 +60,7 @@ fun EventListCard(
                     color = TextSecondary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Text(
@@ -69,7 +68,7 @@ fun EventListCard(
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Text(
@@ -77,18 +76,15 @@ fun EventListCard(
                     color = accentColor,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // ─────────────────────────────
-            // CONTENT COLUMN (restored full UI)
-            // ─────────────────────────────
             Column(modifier = Modifier.weight(1f)) {
 
-                // Category row (CAMP / EVENT etc)
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = event.category.title.uppercase(),
@@ -96,36 +92,35 @@ fun EventListCard(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 2.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Title
+
                 Text(
                     text = event.title,
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     lineHeight = 28.sp
                 )
 
-                // Subtitle (was in your hardcoded version)
+
                 event.subtitle?.let {
                     Text(
                         text = it,
                         color = accentColor.copy(alpha = 0.8f),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Time + Location row
                 Row(verticalAlignment = Alignment.CenterVertically) {
 
                     Icon(
@@ -142,7 +137,8 @@ fun EventListCard(
                         color = TextSecondary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily,
+                        maxLines = 1
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -162,19 +158,21 @@ fun EventListCard(
                             color = TextSecondary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = RubikFontFamily
+                            fontFamily = QuickSandFontFamily,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Description preview (like your hardcoded paragraph)
                 Text(
                     text = event.description,
                     color = TextSecondary,
                     fontSize = 14.sp,
-                    fontFamily = RubikFontFamily,
+                    fontFamily = QuickSandFontFamily,
                     maxLines = 2
                 )
             }

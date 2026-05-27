@@ -2,9 +2,6 @@ package dev.bti.kdym.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -13,25 +10,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.KDYMEvent
 import dev.bti.kdym.ui.theme.RedAccent
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 
 @Composable
-fun EventList(events: List<KDYMEvent>, filter: String, onEventClick: (KDYMEvent) -> Unit) {
-
+fun EventList(
+    events: List<KDYMEvent>,
+    isCampSchedule: Boolean,
+    onEventClick: (KDYMEvent) -> Unit
+) {
     if (events.isEmpty()) {
         Text("No events yet...", color = Color.White)
         return
     }
 
-    val filteredEvents = when (filter) {
-        "CAMP SCHEDULE" -> events.filter { it.isCampEvent }
-        else -> events
-    }
-
-    val grouped = filteredEvents
+    val grouped = events
         .sortedBy { it.startDate }
         .groupBy { event ->
-            if (filter == "CAMP SCHEDULE") "SCHEDULE"
+            if (isCampSchedule) "SCHEDULE"
             else event.startDate.toDate()
                 .toInstant()
                 .atZone(java.time.ZoneId.systemDefault())
@@ -42,16 +37,14 @@ fun EventList(events: List<KDYMEvent>, filter: String, onEventClick: (KDYMEvent)
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         grouped.forEach { (header, monthEvents) ->
-
             Column {
-
                 Text(
-                    text = if (filter == "CAMP SCHEDULE") "CAMP" else "SCHEDULE",
+                    text = if (isCampSchedule) "CAMP" else "SCHEDULE",
                     color = RedAccent,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Text(
@@ -59,7 +52,7 @@ fun EventList(events: List<KDYMEvent>, filter: String, onEventClick: (KDYMEvent)
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
             }
 

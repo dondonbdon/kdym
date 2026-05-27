@@ -2,133 +2,131 @@ package dev.bti.kdym.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.R
 
-val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
-
 val RubikGlitchFontFamily = FontFamily(
-    androidx.compose.ui.text.font.Font(R.font.rubik_glitch_regular, FontWeight.Normal)
+    Font(R.font.rubik_glitch_regular, FontWeight.Normal)
 )
 
-val RubikFont = GoogleFont("Inria Sans")
-val RubikFontFamily = FontFamily(
-    Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Bold),
-    Font(googleFont = RubikFont, fontProvider = provider, weight = FontWeight.Black)
+val QuickSandFontFamily = FontFamily(
+    Font(R.font.quicksand_light, FontWeight.Light),
+    Font(R.font.quicksand_regular, FontWeight.Normal),
+    Font(R.font.quicksand_medium, FontWeight.Medium),
+    Font(R.font.quicksand_semi_bold, FontWeight.SemiBold),
+    Font(R.font.quicksand_bold, FontWeight.Bold),
+    Font(R.font.quicksand_bold, FontWeight.ExtraBold),
+    Font(R.font.quicksand_bold, FontWeight.Black)
 )
+
+// Alias to maintain compatibility with project-wide usages of RubikFontFamily
+val RubikFontFamily = QuickSandFontFamily
 
 // Set of Material typography styles to start with
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 57.sp,
         lineHeight = 64.sp,
         letterSpacing = (-0.25).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 45.sp,
         lineHeight = 52.sp,
         letterSpacing = 0.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 36.sp,
         lineHeight = 44.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = RubikFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = QuickSandFontFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = RubikFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = QuickSandFontFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
+        fontFamily = QuickSandFontFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = RubikFontFamily,
+        fontFamily = QuickSandFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 11.sp,
         lineHeight = 16.sp,

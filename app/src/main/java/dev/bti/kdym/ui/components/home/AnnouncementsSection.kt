@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.Announcement
 import dev.bti.kdym.ui.components.GlassCard
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 
 @Composable
@@ -26,7 +26,7 @@ fun AnnouncementsSection(announcements: List<Announcement>) {
             fontSize = 10.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 2.sp,
-            fontFamily = RubikFontFamily
+            fontFamily = QuickSandFontFamily
         )
         Spacer(modifier = Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -53,13 +53,13 @@ fun AnnouncementsSection(announcements: List<Announcement>) {
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = RubikFontFamily
+                                fontFamily = QuickSandFontFamily
                             )
                             Text(
                                 text = announcement.body,
                                 color = TextSecondary,
                                 fontSize = 12.sp,
-                                fontFamily = RubikFontFamily,
+                                fontFamily = QuickSandFontFamily,
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )

@@ -14,17 +14,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.AppUser
-import dev.bti.kdym.data.models.Tribe
 import dev.bti.kdym.ui.components.CommandInputField
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 
@@ -73,7 +71,7 @@ fun ManageTribePeopleScreen(
                         color = Color.White,
                         fontSize = 44.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         lineHeight = 44.sp
                     )
                     Text(
@@ -81,7 +79,7 @@ fun ManageTribePeopleScreen(
                         color = Color(0xFFEF4444),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily,
+                        fontFamily = QuickSandFontFamily,
                         lineHeight = 24.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -89,7 +87,7 @@ fun ManageTribePeopleScreen(
                         text = "Admins can assign leaders and members.",
                         color = TextSecondary,
                         fontSize = 14.sp,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
                 IconButton(
@@ -186,7 +184,7 @@ fun FilterTab(label: String, isSelected: Boolean, onClick: () -> Unit) {
             fontSize = 10.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.sp,
-            fontFamily = RubikFontFamily
+            fontFamily = QuickSandFontFamily
         )
     }
 }
@@ -208,8 +206,8 @@ fun ManageUserCard(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontFamily = RubikFontFamily)
-                    Text(text = user.email, color = TextSecondary, fontSize = 12.sp, fontFamily = RubikFontFamily)
+                    Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                    Text(text = user.email, color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
                 }
                 if (isLeader) {
                     Surface(color = Color(0xFF67E8F9).copy(0.1f), shape = RoundedCornerShape(12.dp)) {
@@ -232,7 +230,7 @@ fun ManageUserCard(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF67E8F9), contentColor = Color.Black),
                         shape = RoundedCornerShape(22.dp)
                     ) {
-                        Text(text = "ADD MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                        Text(text = "ADD MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                     }
                     Button(
                         onClick = onMakeLeader,
@@ -240,7 +238,7 @@ fun ManageUserCard(
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                         shape = RoundedCornerShape(22.dp)
                     ) {
-                        Text(text = "MAKE LEADER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                        Text(text = "MAKE LEADER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                     }
                 } else {
                     if (isMember) {
@@ -250,7 +248,7 @@ fun ManageUserCard(
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                             shape = RoundedCornerShape(22.dp)
                         ) {
-                            Text(text = "UPGRADE TO LEADER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                            Text(text = "UPGRADE TO LEADER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                         }
                     } else if (isLeader) {
                         Button(
@@ -259,7 +257,7 @@ fun ManageUserCard(
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                             shape = RoundedCornerShape(22.dp)
                         ) {
-                            Text(text = "DEMOTE TO MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                            Text(text = "DEMOTE TO MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                         }
                     }
                     Button(
@@ -268,7 +266,7 @@ fun ManageUserCard(
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(0.1f), contentColor = Color.Red),
                         shape = RoundedCornerShape(22.dp)
                     ) {
-                        Text(text = "REMOVE", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = RubikFontFamily)
+                        Text(text = "REMOVE", fontSize = 11.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                     }
                 }
             }

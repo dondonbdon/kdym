@@ -19,24 +19,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.theme.RubikFontFamily
+import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun CreateTribeScreen(
+    tribeId: String? = null,
     onNavigateBack: () -> Unit,
     viewModel: AdminViewModel
 ) {
-    var tribeName by remember { mutableStateOf("") }
-    var subtitle by remember { mutableStateOf("") }
-    var iconName by remember { mutableStateOf("shield") }
-    var colorHex by remember { mutableStateOf("#EF4444") }
+    val tribes by viewModel.tribes.collectAsState()
+    val existingTribe = remember(tribeId, tribes) { tribes.find { it.id == tribeId } }
+
+    var tribeName by remember(existingTribe) { mutableStateOf(existingTribe?.name ?: "") }
+    var subtitle by remember(existingTribe) { mutableStateOf(existingTribe?.subtitle ?: "") }
+    var iconName by remember(existingTribe) { mutableStateOf(existingTribe?.iconName ?: "shield") }
+    var colorHex by remember(existingTribe) { mutableStateOf(existingTribe?.colorHex ?: "#EF4444") }
 
     val allUsers by viewModel.allUsers.collectAsState()
-    var selectedLeaderIds by remember { mutableStateOf(setOf<String>()) }
+    var selectedLeaderIds by remember(existingTribe) { mutableStateOf(existingTribe?.leaderIds?.toSet() ?: setOf<String>()) }
     var showLeaderPicker by remember { mutableStateOf(false) }
 
     if (showLeaderPicker) {
@@ -73,8 +77,8 @@ fun CreateTribeScreen(
             ScreenHeader(
                 onNavigateBack = onNavigateBack,
                 icon = Icons.Default.Shield,
-                title = "CREATE",
-                subtitle = "Define a new camp tribe."
+                title = if (tribeId == null) "CREATE TRIBE" else "EDIT TRIBE",
+                subtitle = if (tribeId == null) "This also creates a linked group chat." else "Update tribe identity and leaders."
             )
 
             Column(
@@ -83,23 +87,6 @@ fun CreateTribeScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
             ) {
-                Text(
-                    text = "TRIBE",
-                    color = Color.White,
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily,
-                    lineHeight = 44.sp
-                )
-
-                Text(
-                    text = "Camp ID: camp_2026",
-                    color = TextSecondary,
-                    fontSize = 14.sp,
-                    fontFamily = RubikFontFamily
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
 
                 CommandInputField(
                     value = tribeName,
@@ -119,45 +106,27 @@ fun CreateTribeScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                CommandInputField(
-                    value = iconName,
-                    onValueChange = { iconName = it },
-                    placeholder = "shield.fill",
-                    icon = Icons.Default.AutoAwesome
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                CommandInputField(
-                    value = colorHex,
-                    onValueChange = { colorHex = it },
-                    placeholder = "#EF4444",
-                    icon = Icons.Default.Palette
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
                 Text(
                     text = "QUICK PICK",
                     color = Color(0xFFEF4444),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "COLORS",
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     colors.forEach { hex ->
-                        val color = Color(android.graphics.Color.parseColor(hex))
+                        val color = Color(hex.toColorInt())
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
@@ -180,14 +149,14 @@ fun CreateTribeScreen(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "ICONS",
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -230,7 +199,7 @@ fun CreateTribeScreen(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 2.sp,
-                    fontFamily = RubikFontFamily
+                    fontFamily = QuickSandFontFamily
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -242,10 +211,10 @@ fun CreateTribeScreen(
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                     IconButton(
-                        onClick = { showLeaderPicker = true },
+                        onClick = { },
                         modifier = Modifier.background(Color.White.copy(0.1f), CircleShape)
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.White)
@@ -292,7 +261,19 @@ fun CreateTribeScreen(
 
                 Button(
                     onClick = {
-                        viewModel.createTribe(tribeName, subtitle, colorHex, iconName)
+                        if (tribeId == null) {
+                            viewModel.createTribe(tribeName, subtitle, colorHex, iconName)
+                        } else {
+                            existingTribe?.let {
+                                viewModel.updateTribe(it.copy(
+                                    name = tribeName,
+                                    subtitle = subtitle,
+                                    colorHex = colorHex,
+                                    iconName = iconName,
+                                    leaderIds = selectedLeaderIds.toList()
+                                ))
+                            }
+                        }
                         onNavigateBack()
                     },
                     modifier = Modifier
@@ -306,9 +287,9 @@ fun CreateTribeScreen(
                     enabled = tribeName.isNotEmpty()
                 ) {
                     Text(
-                        text = "CREATE TRIBE",
+                        text = if (tribeId == null) "CREATE TRIBE" else "SAVE CHANGES",
                         fontWeight = FontWeight.Black,
-                        fontFamily = RubikFontFamily
+                        fontFamily = QuickSandFontFamily
                     )
                 }
 

@@ -1,5 +1,6 @@
 package dev.bti.kdym.data.models
 
+import androidx.annotation.Keep
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 import kotlinx.serialization.Serializable
@@ -19,6 +20,7 @@ import dev.bti.kdym.data.local.serializers.TimestampSerializer
  * @property updatedAt Last time the configuration was modified.
  */
 @Serializable
+@Keep
 data class AppConfig(
     val campModeEnabled: Boolean = false,
     val activeCampId: String? = null,
@@ -37,6 +39,7 @@ data class AppConfig(
 )
 
 @Serializable
+@Keep
 enum class NewAccountAccessDefault(val value: String) {
     @PropertyName("publicUser")
     PUBLIC("publicUser"),

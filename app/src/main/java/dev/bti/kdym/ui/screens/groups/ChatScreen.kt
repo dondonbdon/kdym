@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -108,6 +109,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import dev.bti.kdym.data.models.AppGroup
+import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.data.models.GroupAttachment
 import dev.bti.kdym.data.models.GroupAttachmentType
 import dev.bti.kdym.data.models.GroupMessage
@@ -130,8 +132,55 @@ import kotlin.math.roundToInt
  * Main Chat Screen for group messaging.
  * Supports real-time updates, image attachments, replies, reactions, and polls.
  */
-val OwnMessageColor = Color(0xFFEF4444)
 val OtherMessageColor = Color(0xFF1E1E1E)
+
+@Composable
+fun EmptyChatState(group: AppGroup?, themeColor: Color) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(themeColor.copy(0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (group?.iconName != null) {
+                MappedIcon(
+                    iosName = group.iconName,
+                    tint = themeColor,
+                    modifier = Modifier.size(40.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Forum,
+                    contentDescription = null,
+                    tint = themeColor,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "NO MESSAGES YET",
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Black,
+            fontFamily = QuickSandFontFamily
+        )
+        Text(
+            text = "Be the first to start the conversation in ${group?.name ?: "this chat"}.",
+            color = TextSecondary,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            fontFamily = QuickSandFontFamily,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -140,11 +189,25 @@ fun ChatScreen(
     onNavigateBack: () -> Unit,
     onNavigateToInfo: (String) -> Unit,
     onNavigateToCreatePoll: (String) -> Unit,
+    onNavigateToProfile: (String) -> Unit,
     viewModel: GroupsViewModel,
     adminViewModel: AdminViewModel
 ) {
     val groups by viewModel.groups.collectAsState()
-    val group = remember(groupId, groups) { groups.find { it.id == groupId } }
+    val tribes by adminViewModel.tribes.collectAsState()
+    val group = remember(groupId, groups, tribes) {
+        val baseGroup = groups.find { it.id == groupId }
+        if (baseGroup?.type == AppGroupType.tribe) {
+            val matchingTribe = tribes.find { it.id == baseGroup.tribeId }
+            if (matchingTribe != null) {
+                baseGroup.copy(
+                    iconName = matchingTribe.iconName,
+                    colorHex = matchingTribe.colorHex
+                )
+            } else baseGroup
+        } else baseGroup
+    }
+    val themeColor = remember(group?.colorHex) { group?.colorHex?.toColor() ?: Color(0xFFEF4444) }
     val messages by viewModel.getMessages(groupId).collectAsState(initial = emptyList())
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -255,11 +318,17 @@ fun ChatScreen(
                     onNavigateBack = onNavigateBack,
                     onInfoClick = { onNavigateToInfo(groupId) })
 
-                Box(modifier = Modifier.weight(1f)) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    if (messages.isEmpty()) {
+                        EmptyChatState(group = group, themeColor = themeColor)
+                    }
+                    
                     MessageList(
                         messages = messages,
                         optimisticReactions = optimisticReactions,
                         listState = listState,
+                        themeColor = themeColor,
+                        group = group,
                         currentUserId = viewModel.currentUserId,
                         adminViewModel = adminViewModel,
                         onMessageOptions = { message ->
@@ -278,13 +347,7 @@ fun ChatScreen(
                             initialMediaIndex = index
                             showMediaGallery = true
                         },
-/*
-                    onReactionClick = { msg ->
-                        selectedMessage = msg
-                        viewModel.fetchMessageReactions(groupId, msg.id)
-                        showReactionDetails = true
-                    },
-*/
+                        onNavigateToProfile = onNavigateToProfile,
                         onReactionClick = { },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -298,6 +361,7 @@ fun ChatScreen(
                             .padding(bottom = 16.dp)
                     ) {
                         ScrollToBottomButton(
+                            themeColor = themeColor,
                             onClick = {
                                 scope.launch {
                                     listState.animateScrollToItem(0)
@@ -319,6 +383,7 @@ fun ChatScreen(
 
                 ChatInput(
                     value = messageText,
+                    themeColor = themeColor,
                     onValueChange = { messageText = it },
                     onSend = {
                         if (messageText.isNotBlank() || pendingAttachments.isNotEmpty()) {
@@ -377,6 +442,7 @@ fun ChatScreen(
         if (showOptionsMenu && selectedMessage != null) {
             MessageOptionsOverlay(
                 message = selectedMessage!!,
+                themeColor = themeColor,
                 visible = showOptionsMenu,
                 onDismiss = {
                     showOptionsMenu = false
@@ -414,12 +480,15 @@ fun MessageList(
     messages: List<GroupMessage>,
     optimisticReactions: Map<String, String?>,
     listState: LazyListState,
+    themeColor: Color,
+    group: AppGroup?,
     currentUserId: String?,
     adminViewModel: AdminViewModel,
     onMessageOptions: (GroupMessage) -> Unit,
     onSwipeToReply: (GroupMessage) -> Unit,
     onReplyClick: (String) -> Unit,
     onMediaClick: (GroupMessage, Int) -> Unit,
+    onNavigateToProfile: (String) -> Unit,
     onReactionClick: (GroupMessage) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -456,6 +525,7 @@ fun MessageList(
             MessageBubble(
                 message = message.copy(reactionCounts = finalReactions),
                 isOwnMessage = message.senderId == currentUserId,
+                themeColor = themeColor,
                 isFirstInGroup = isFirstInGroup,
                 isLastInGroup = isLastInGroup,
                 adminViewModel = adminViewModel,
@@ -463,6 +533,7 @@ fun MessageList(
                 onSwipeToReply = { onSwipeToReply(message) },
                 onReplyClick = onReplyClick,
                 onMediaClick = { mediaIndex -> onMediaClick(message, mediaIndex) },
+                onNavigateToProfile = onNavigateToProfile,
                 onReactionClick = { onReactionClick(message) }
             )
 
@@ -557,25 +628,16 @@ fun ChatHeader(group: AppGroup?, onNavigateBack: () -> Unit, onInfoClick: () -> 
                         modifier = Modifier
                             .size(32.dp)
                             .background(
-                                group?.colorHex?.toColor() ?: OwnMessageColor,
+                                group?.colorHex?.toColor() ?: Color(0xFFEF4444),
                                 CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (group?.iconName != null) {
-                            MappedIcon(
-                                iosName = group.iconName,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        } else {
-                            Text(
-                                text = group?.name?.take(1)?.uppercase() ?: "?",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Black
-                            )
-                        }
+                        MappedIcon(
+                            iosName = group?.iconName ?: "",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(horizontalAlignment = Alignment.Start) {
@@ -619,6 +681,7 @@ fun ChatHeader(group: AppGroup?, onNavigateBack: () -> Unit, onInfoClick: () -> 
 fun MessageBubble(
     message: GroupMessage,
     isOwnMessage: Boolean,
+    themeColor: Color,
     isFirstInGroup: Boolean,
     isLastInGroup: Boolean,
     adminViewModel: AdminViewModel,
@@ -626,6 +689,7 @@ fun MessageBubble(
     onSwipeToReply: () -> Unit,
     onReplyClick: (String) -> Unit,
     onMediaClick: (Int) -> Unit,
+    onNavigateToProfile: (String) -> Unit,
     onReactionClick: () -> Unit
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -651,7 +715,8 @@ fun MessageBubble(
             if (isLastInGroup) {
                 AvatarCircle(
                     url = message.senderPhotoURL,
-                    initials = message.senderName.take(2).uppercase()
+                    initials = message.senderName.take(2).uppercase(),
+                    onClick = { onNavigateToProfile(message.senderId) }
                 )
             } else {
                 Spacer(modifier = Modifier.size(32.dp))
@@ -712,7 +777,9 @@ fun MessageBubble(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp,
-                        modifier = Modifier.padding(start = 12.dp, bottom = 4.dp),
+                        modifier = Modifier
+                            .padding(start = 12.dp, bottom = 4.dp)
+                            .clickable { onNavigateToProfile(message.senderId) },
                         fontFamily = QuickSandFontFamily
                     )
                 }
@@ -736,6 +803,7 @@ fun MessageBubble(
                             AttachmentGrid(
                                 attachments = message.attachments,
                                 isOwnMessage = isOwnMessage,
+                                themeColor = themeColor,
                                 onMediaClick = onMediaClick
                             )
                         }
@@ -750,6 +818,7 @@ fun MessageBubble(
                             MessageTextSurface(
                                 text = message.text,
                                 isOwnMessage = isOwnMessage,
+                                themeColor = themeColor,
                                 hasReply = message.replyToMessageId != null,
                                 isFirstInGroup = isFirstInGroup,
                                 isLastInGroup = isLastInGroup
@@ -796,12 +865,13 @@ fun MessageBubble(
 fun AttachmentGrid(
     attachments: List<GroupAttachment>,
     isOwnMessage: Boolean,
+    themeColor: Color,
     onMediaClick: (Int) -> Unit
 ) {
     val imageAttachments =
         attachments.filter { it.type == GroupAttachmentType.image || it.type == GroupAttachmentType.video }
     val fileAttachments = attachments.filter { it.type == GroupAttachmentType.file }
-    val bgColor = if (isOwnMessage) OwnMessageColor else OtherMessageColor
+    val bgColor = if (isOwnMessage) themeColor else OtherMessageColor
 
     Column(
         modifier = Modifier.padding(bottom = 4.dp),
@@ -948,6 +1018,7 @@ fun AttachmentGrid(
 fun MessageTextSurface(
     text: String,
     isOwnMessage: Boolean,
+    themeColor: Color,
     hasReply: Boolean,
     isFirstInGroup: Boolean,
     isLastInGroup: Boolean
@@ -957,7 +1028,7 @@ fun MessageTextSurface(
     
     val brush = if (isOwnMessage) {
         Brush.linearGradient(
-            colors = listOf(Color(0xFFF87171), Color(0xFFEF4444)),
+            colors = listOf(themeColor.copy(alpha = 0.8f), themeColor),
             start = Offset(0f, 0f),
             end = Offset(1000f, 1000f)
         )
@@ -1221,12 +1292,13 @@ fun ReactionChipRow(
 }
 
 @Composable
-fun AvatarCircle(url: String?, initials: String) {
+fun AvatarCircle(url: String?, initials: String, onClick: (() -> Unit)? = null) {
     Box(
         modifier = Modifier
             .size(32.dp)
             .background(Color.White.copy(0.1f), CircleShape)
-            .clip(CircleShape),
+            .clip(CircleShape)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         contentAlignment = Alignment.Center
     ) {
         if (url != null) {
@@ -1441,6 +1513,7 @@ fun AttachmentPreview(attachments: List<Uri>, onRemove: (Uri) -> Unit) {
 @Composable
 fun ChatInput(
     value: String,
+    themeColor: Color,
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
     onPlusClick: () -> Unit,
@@ -1501,7 +1574,7 @@ fun ChatInput(
                 modifier = Modifier
                     .size(48.dp)
                     .background(
-                        if (enabled && value.isNotBlank()) Color.White else Color.White.copy(0.05f),
+                        if (enabled && value.isNotBlank()) themeColor else Color.White.copy(0.05f),
                         CircleShape
                     )
             ) {
@@ -1586,12 +1659,15 @@ fun PlusMenuItem(icon: ImageVector, label: String, onClick: () -> Unit) {
 @Composable
 fun MessageOptionsOverlay(
     message: GroupMessage,
+    themeColor: Color,
     visible: Boolean,
     onDismiss: () -> Unit,
     onReply: () -> Unit,
     onReaction: (String) -> Unit,
     adminViewModel: AdminViewModel
 ) {
+    // Use themeColor for some elements if desired, or just ignore if not needed
+    // For now we keep it to satisfy the parameter requirement
     Popup(
         alignment = Alignment.Center,
         properties = PopupProperties(
@@ -1651,6 +1727,7 @@ fun MessageOptionsOverlay(
                                 AttachmentGrid(
                                     attachments = message.attachments,
                                     isOwnMessage = false, // Simplified look
+                                    themeColor = themeColor,
                                     onMediaClick = {}
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -1670,6 +1747,7 @@ fun MessageOptionsOverlay(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     MessageContextMenu(
+                        themeColor = themeColor,
                         onReply = onReply,
                         onDismiss = onDismiss
                     )
@@ -1784,7 +1862,7 @@ fun ReactionSelectionBar(onReaction: (String) -> Unit) {
 }
 
 @Composable
-fun MessageContextMenu(onReply: () -> Unit, onDismiss: () -> Unit) {
+fun MessageContextMenu(themeColor: Color, onReply: () -> Unit, onDismiss: () -> Unit) {
     Surface(
         color = Color(0xFF1A1A1A),
         shape = RoundedCornerShape(24.dp),
@@ -1792,7 +1870,7 @@ fun MessageContextMenu(onReply: () -> Unit, onDismiss: () -> Unit) {
         border = BorderStroke(1.dp, Color.White.copy(0.1f))
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
-            OptionMenuItem(icon = Icons.AutoMirrored.Filled.Reply, label = "Reply") { onReply() }
+            OptionMenuItem(icon = Icons.AutoMirrored.Filled.Reply, label = "Reply", color = themeColor) { onReply() }
             OptionMenuItem(icon = Icons.Default.ContentCopy, label = "Copy") { onDismiss() }
             OptionMenuItem(
                 icon = Icons.Default.Delete,
@@ -1805,13 +1883,14 @@ fun MessageContextMenu(onReply: () -> Unit, onDismiss: () -> Unit) {
 
 @Composable
 fun ScrollToBottomButton(
+    themeColor: Color,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
             .height(40.dp)
             .clickable { onClick() },
-        color = Color(0xFFEF4444),
+        color = themeColor,
         shape = CircleShape,
         shadowElevation = 8.dp
     ) {

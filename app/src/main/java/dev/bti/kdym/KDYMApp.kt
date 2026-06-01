@@ -49,7 +49,6 @@ class KdymApp : Application(), ImageLoaderFactory {
                 return@addOnCompleteListener
             }
 
-            Log.d("FCM", "TOKEN = ${task.result}")
         }
 
         // Initialize Media3 SimpleCache for Video/Audio

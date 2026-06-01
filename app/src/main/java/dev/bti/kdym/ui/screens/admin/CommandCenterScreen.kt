@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.data.models.AppUser
 import dev.bti.kdym.data.models.UserRole
 import dev.bti.kdym.ui.components.GlassCard
@@ -47,7 +48,7 @@ fun CommandCenterScreen(
     onNavigateToTribeWars: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToChurches: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val user by viewModel.user.collectAsState()
     val appConfig by viewModel.appConfig.collectAsState()

@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import dev.bti.kdym.data.models.AppUser
 import dev.bti.kdym.ui.components.GlassCard
@@ -71,7 +72,7 @@ fun SettingsScreen(
     onNavigateToCommandHub: () -> Unit,
     onNavigateToChurches: () -> Unit,
     onNavigateToRequestAccess: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val user by viewModel.user.collectAsState()

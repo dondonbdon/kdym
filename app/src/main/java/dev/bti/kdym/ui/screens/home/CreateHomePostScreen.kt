@@ -276,7 +276,19 @@ fun CreateHomePostScreen(
                 Spacer(modifier = Modifier.height(40.dp))
 
                 Button(
-                    onClick = { /* TODO: Post logic */ onNavigateBack() },
+                    onClick = {
+                        adminViewModel.createHomePost(
+                            title = title,
+                            body = body,
+                            audience = selectedAudience,
+                            priority = selectedPostType,
+                            linkTitle = linkTitle,
+                            linkURL = url,
+                            targetTribeId = selectedTribeId,
+                            targetGroupId = selectedGroupId
+                        )
+                        onNavigateBack()
+                    },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                     shape = RoundedCornerShape(28.dp),

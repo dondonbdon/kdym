@@ -13,21 +13,27 @@ import dev.bti.kdym.data.models.MessageReaction
 import dev.bti.kdym.data.repositories.GroupRepository
 import dev.bti.kdym.data.repositories.StorageRepository
 import dev.bti.kdym.data.repositories.UserRepository
-import dev.bti.kdym.data.repositories.RepositoryProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.awaitClose
+
+import dev.bti.kdym.data.local.AppPrefs
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 /**
  * ViewModel for managing chat groups, messages, and interactive features like reactions and polls.
  */
+@HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
-class GroupsViewModel(
-    private val repo: GroupRepository = GroupRepository(),
-    private val storageRepo: StorageRepository = StorageRepository(),
-    private val userRepository: UserRepository = UserRepository(),
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+class GroupsViewModel @Inject constructor(
+    private val repo: GroupRepository,
+    private val storageRepo: StorageRepository,
+    private val userRepository: UserRepository,
+    private val auth: FirebaseAuth,
+    private val prefs: AppPrefs
 ) : ViewModel() {
 
     /**
@@ -43,17 +49,28 @@ class GroupsViewModel(
     private val _selectedTab = MutableStateFlow("GROUPS")
     val selectedTab: StateFlow<String> = _selectedTab.asStateFlow()
 
-    private val prefs = RepositoryProvider.prefs
+    private val _adminViewModeOptimistic = MutableStateFlow<Boolean?>(null)
 
-    val adminViewMode: StateFlow<Boolean> = (prefs?.adminViewMode ?: flowOf(false))
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val adminViewMode: StateFlow<Boolean> = combine(
+        prefs.adminViewMode,
+        _adminViewModeOptimistic
+    ) { real, optimistic ->
+        optimistic ?: real
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun selectTab(tab: String) {
         _selectedTab.value = tab
     }
 
     fun toggleAdminViewMode() = viewModelScope.launch {
-        prefs?.saveAdminViewMode(!adminViewMode.value)
+        val newValue = !adminViewMode.value
+        _adminViewModeOptimistic.value = newValue
+        try {
+            prefs.saveAdminViewMode(newValue)
+               delay(500)
+        } finally {
+            _adminViewModeOptimistic.value = null
+        }
     }
 
     // Join Request Tracking
@@ -86,6 +103,13 @@ class GroupsViewModel(
     
     private val _messageReactions = MutableStateFlow<Map<String, List<MessageReaction>>>(emptyMap())
     val messageReactions: StateFlow<Map<String, List<MessageReaction>>> = _messageReactions.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    fun clearError() {
+        _error.value = null
+    }
 
     /**
      * Returns a real-time stream of messages for a specific group.
@@ -134,6 +158,10 @@ class GroupsViewModel(
         val uid = currentUserId ?: return
         viewModelScope.launch {
             try {
+
+                val currentUserDoc = userRepository.getUser(uid).firstOrNull()
+                val freshSenderName = currentUserDoc?.displayName ?: auth.currentUser?.displayName ?: "KDYM Member"
+
                 // Upload all new attachments in parallel
                 val uploadedAttachmentsFromUri = attachments.map { uri ->
                     val url = storageRepo.uploadChatMedia(groupId, uri)
@@ -158,7 +186,7 @@ class GroupsViewModel(
                 val message = GroupMessage(
                     groupId = groupId,
                     senderId = uid,
-                    senderName = auth.currentUser?.displayName ?: "KDYM Member",
+                    senderName = freshSenderName,
                     text = text,
                     attachments = allAttachments,
                     replyToMessageId = replyTo?.id,
@@ -168,7 +196,7 @@ class GroupsViewModel(
                 )
                 repo.sendMessage(groupId, message)
             } catch (e: Exception) {
-                // TODO: Handle send failure (e.g., UI feedback)
+                _error.value = "Failed to send message: ${e.localizedMessage}"
                 println("Failed to send message: ${e.message}")
             }
         }
@@ -182,21 +210,19 @@ class GroupsViewModel(
     /**
      * Set up listeners for join requests made by the current user.
      */
+    private var requestsJob: kotlinx.coroutines.Job? = null
     private fun observeUserRequests() {
-        viewModelScope.launch {
-            auth.currentUser?.uid?.let { uid ->
-                repo.getJoinRequestsForUser(uid).collect { requests ->
-                    _userRequests.value = requests
-                }
-            }
-        }
-        
-        auth.addAuthStateListener { firebaseAuth ->
-            val uid = firebaseAuth.currentUser?.uid ?: return@addAuthStateListener
-            viewModelScope.launch {
-                repo.getJoinRequestsForUser(uid).collect { requests ->
-                    _userRequests.value = requests
-                }
+        requestsJob?.cancel()
+        requestsJob = viewModelScope.launch {
+            callbackFlow {
+                val listener = FirebaseAuth.AuthStateListener { it.currentUser?.uid?.let { uid -> trySend(uid) } }
+                auth.addAuthStateListener(listener)
+                auth.currentUser?.uid?.let { trySend(it) }
+                awaitClose { auth.removeAuthStateListener(listener) }
+            }.flatMapLatest { uid ->
+                repo.getJoinRequestsForUser(uid)
+            }.collect { requests ->
+                _userRequests.value = requests
             }
         }
     }
@@ -204,38 +230,35 @@ class GroupsViewModel(
     /**
      * Sets up listeners to keep the user's groups list up-to-date.
      */
+    private var groupsJob: kotlinx.coroutines.Job? = null
     private fun observeUserGroups() {
-        viewModelScope.launch {
-            auth.currentUser?.uid?.let { uid ->
+        groupsJob?.cancel()
+        groupsJob = viewModelScope.launch {
+            callbackFlow {
+                val listener = FirebaseAuth.AuthStateListener { it.currentUser?.uid?.let { uid -> trySend(uid) } }
+                auth.addAuthStateListener(listener)
+                auth.currentUser?.uid?.let { trySend(it) }
+                awaitClose { auth.removeAuthStateListener(listener) }
+            }.flatMapLatest { uid ->
                 userRepository.getUser(uid).flatMapLatest { user ->
-                    if (user?.isAdmin == true) {
-                        repo.getAllGroups()
-                    } else {
-                        repo.getGroupsForUser(uid, user?.tribeId)
-                    }
-                }.map { list ->
-                    list.sortedByDescending { it.lastMessageAt ?: it.createdAt }
-                }.collect { list ->
-                    _groups.value = list
-                }
-            }
-        }
+                    if (user == null) return@flatMapLatest flowOf(emptyList())
 
-        // Re-observe if authentication state changes
-        auth.addAuthStateListener { firebaseAuth ->
-            val uid = firebaseAuth.currentUser?.uid ?: return@addAuthStateListener
-            viewModelScope.launch {
-                userRepository.getUser(uid).flatMapLatest { user ->
-                    if (user?.isAdmin == true) {
+                    val myGroupsFlow = if (user.isAdmin) {
                         repo.getAllGroups()
                     } else {
-                        repo.getGroupsForUser(uid, user?.tribeId)
+                        repo.getGroupsForUser(uid, user.tribeId)
                     }
-                }.map { list ->
-                    list.sortedByDescending { it.lastMessageAt ?: it.createdAt }
-                }.collect { list ->
-                    _groups.value = list
+
+                    val publicGroupsFlow = repo.getPublicGroups()
+
+                    combine(myGroupsFlow, publicGroupsFlow) { my, public ->
+                        (my + public).distinctBy { it.id }
+                    }
                 }
+            }.map { list ->
+                list.sortedByDescending { it.lastMessageAt ?: it.createdAt }
+            }.collect { list ->
+                _groups.value = list
             }
         }
     }
@@ -297,13 +320,17 @@ class GroupsViewModel(
         }
         val uid = currentUserId ?: return
         val userName = auth.currentUser?.displayName ?: "KDYM Member"
-        val userEmail = auth.currentUser?.email ?: ""
         
         viewModelScope.launch {
             try {
+
+                val currentUserDoc = userRepository.getUser(uid).firstOrNull()
+                val freshName = currentUserDoc?.displayName ?: auth.currentUser?.displayName ?: "KDYM Member"
+                val userEmail = currentUserDoc?.email ?: auth.currentUser?.email ?: ""
+
                 val request = GroupJoinRequest(
                     groupId = group.id,
-                    groupName = group.name,
+                    groupName = freshName,
                     requesterId = uid,
                     requesterName = userName,
                     requesterEmail = userEmail,

@@ -24,6 +24,8 @@ class AppPrefs(private val context: Context) {
         private val KEY_ADMIN_VIEW_MODE = stringPreferencesKey("admin_view_mode")
         private val KEY_GUESSED_TRIBE = stringPreferencesKey("guessed_tribe")
         private val KEY_TRIBE_REVEAL_SHOWN = stringPreferencesKey("tribe_reveal_shown")
+        private val KEY_DISMISSED_OVERLAY_ID = stringPreferencesKey("dismissed_overlay_id")
+        private val KEY_OVERLAY_DISMISSAL_TIME = stringPreferencesKey("overlay_dismissal_time")
     }
 
     val appConfig: Flow<AppConfig?> = context.dataStore.data.map { prefs ->
@@ -44,6 +46,14 @@ class AppPrefs(private val context: Context) {
 
     val tribeRevealShown: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_TRIBE_REVEAL_SHOWN]?.toBoolean() ?: false
+    }
+
+    val dismissedOverlayId: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DISMISSED_OVERLAY_ID]
+    }
+
+    val overlayDismissalTime: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[KEY_OVERLAY_DISMISSAL_TIME]?.toLong() ?: 0L
     }
 
     suspend fun saveAppConfig(config: AppConfig) {
@@ -74,6 +84,13 @@ class AppPrefs(private val context: Context) {
     suspend fun saveTribeRevealShown(shown: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[KEY_TRIBE_REVEAL_SHOWN] = shown.toString()
+        }
+    }
+
+    suspend fun saveOverlayDismissal(overlayId: String, time: Long) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_DISMISSED_OVERLAY_ID] = overlayId
+            prefs[KEY_OVERLAY_DISMISSAL_TIME] = time.toString()
         }
     }
 

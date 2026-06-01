@@ -32,4 +32,5 @@ object RepositoryProvider {
     val storageRepository by lazy { StorageRepository() }
     val churchRepository by lazy { ChurchRepository() }
     val campRepository by lazy { CampRepository() }
+    val globalOverlayRepository by lazy { GlobalOverlayRepository() }
 }

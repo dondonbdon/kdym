@@ -817,7 +817,7 @@ fun CommentsBottomSheet(item: PlayItem, viewModel: MainViewModel, onDismiss: () 
                         }
                     }
                 } else {
-                    items(comments) { comment ->
+                    items(comments, key = { it.id }) { comment ->
                         CommentItem(
                             comment = comment,
                             isAdmin = user?.roleEnum?.isAdmin == true,

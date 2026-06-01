@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import java.util.*
 @Composable
 fun CountdownCard(targetDate: Date) {
     var timeLeft by remember { mutableStateOf(calculateTimeLeft(targetDate)) }
+    val isFinished = timeLeft.days == 0L && timeLeft.hours == 0L && timeLeft.minutes == 0L && timeLeft.seconds == 0L
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -44,7 +46,7 @@ fun CountdownCard(targetDate: Date) {
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Countdown to camp",
+                    text = if (isFinished) "Camp is live" else "Countdown to camp",
                     color = Color(0xFF22D3EE),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
@@ -52,7 +54,7 @@ fun CountdownCard(targetDate: Date) {
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "JUN 1",
+                    text = if (isFinished) "NOW" else "JUN 1",
                     color = TextSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -62,16 +64,28 @@ fun CountdownCard(targetDate: Date) {
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TimeComponent(value = timeLeft.days, label = "DAYS")
-                Text(text = ":", color = Color(0xFFEF4444), fontSize = 18.sp, fontWeight = FontWeight.Black)
-                TimeComponent(value = timeLeft.hours, label = "HRS")
-                Text(text = ":", color = Color(0xFFEF4444), fontSize = 18.sp, fontWeight = FontWeight.Black)
-                TimeComponent(value = timeLeft.minutes, label = "MIN")
+            if (isFinished) {
+                Text(
+                    text = "THE OUTPOUR IS HERE",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TimeComponent(value = timeLeft.days, label = "DAYS")
+                    Text(text = ":", color = Color(0xFFEF4444), fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    TimeComponent(value = timeLeft.hours, label = "HRS")
+                    Text(text = ":", color = Color(0xFFEF4444), fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    TimeComponent(value = timeLeft.minutes, label = "MIN")
+                }
             }
         }
     }

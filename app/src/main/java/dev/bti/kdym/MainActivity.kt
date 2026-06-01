@@ -16,8 +16,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,8 +24,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,6 +40,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
+import dev.bti.kdym.data.models.UserRole
 import dev.bti.kdym.data.repositories.RepositoryProvider
 import dev.bti.kdym.ui.App
 import dev.bti.kdym.ui.components.FeedbackBanner
@@ -55,6 +53,7 @@ import dev.bti.kdym.ui.screens.home.*
 import dev.bti.kdym.ui.screens.play.ClipsPager
 import dev.bti.kdym.ui.screens.play.PlayScreen
 import dev.bti.kdym.ui.screens.profile.ProfileScreen
+import dev.bti.kdym.ui.screens.profile.PublicProfileScreen
 import dev.bti.kdym.ui.screens.settings.NotificationPreferencesScreen
 import dev.bti.kdym.ui.screens.settings.SettingsScreen
 import dev.bti.kdym.ui.theme.KdymTheme
@@ -162,12 +161,21 @@ fun NotificationPermissionBanner() {
 @Composable
 fun MainNavigation(mainViewModel: MainViewModel) {
     val navController = rememberNavController()
+    val viewModelStoreOwner = LocalViewModelStoreOwner.current ?: return
 
     // Scoped view models injected via Hilt
-    val groupsViewModel: GroupsViewModel = hiltViewModel()
-    val adminViewModel: AdminViewModel = hiltViewModel()
+    val groupsViewModel: GroupsViewModel = hiltViewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
+        key = "groups_vm"
+    )
+    val adminViewModel: AdminViewModel = hiltViewModel(
+        viewModelStoreOwner = viewModelStoreOwner,
+        key = "admin_vm"
+    )
 
     val user by mainViewModel.user.collectAsState()
+    val appConfig by mainViewModel.appConfig.collectAsState()
+    val isCampMode = appConfig?.campModeEnabled ?: false
     val uiState by mainViewModel.uiState.collectAsState()
 
     // Define main tabs
@@ -179,8 +187,22 @@ fun MainNavigation(mainViewModel: MainViewModel) {
         NavigationItem("settings", "Settings", R.drawable.ic_profile_filled)
     )
 
-    // Add "Command" tab only if user has administrative access
-    val items = baseItems
+    // Filter items based on role and camp mode
+    val items = remember(user, isCampMode) {
+        baseItems.filter { item ->
+            when (item.route) {
+                "play" -> {
+                    // Play: Show if camp mode is on OR user has special access (Admin, Tribe Leader, Group Leader)
+                    isCampMode || user?.isAdmin == true || user?.roleEnum == UserRole.tribeLeader || user?.roleEnum == UserRole.groupLeader
+                }
+                "community" -> {
+                    // Community: Hide for "public" and "pending" roles (only show for "camper" and above)
+                    user?.roleEnum?.canAccessCampContent == true || user?.isAdmin == true
+                }
+                else -> true
+            }
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -220,7 +242,6 @@ fun MainNavigation(mainViewModel: MainViewModel) {
             composable("home") {
                 HomeScreen(
                     onNavigateToComments = { postId -> navController.navigate("comments/$postId") },
-                    onNavigateToCreatePost = { navController.navigate("create_home_post") },
                     onNavigateToRequestAccess = { navController.navigate("request_camp_access") },
                     viewModel = mainViewModel
                 )
@@ -234,7 +255,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
             }
             composable("play") {
                 PlayScreen(
-                    onNavigateToCreatePlayItem = { /* TODO */ },
+                    onNavigateToCreatePlayItem = { },
                     onNavigateToClips = { clipPath -> navController.navigate("clips/$clipPath") },
                     viewModel = mainViewModel
                 )
@@ -277,6 +298,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToInfo = { id -> navController.navigate("group_info/$id") },
                     onNavigateToCreatePoll = { id -> navController.navigate("create_poll?groupId=$id") },
+                    onNavigateToProfile = { userId -> navController.navigate("public_profile/$userId") },
                     viewModel = groupsViewModel,
                     adminViewModel = adminViewModel
                 )
@@ -286,6 +308,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 GroupInfoScreen(
                     groupId = groupId,
                     onNavigateBack = { navController.popBackStack() },
+                    onNavigateToProfile = { userId -> navController.navigate("public_profile/$userId") },
                     groupsViewModel = groupsViewModel,
                     mainViewModel = mainViewModel,
                     adminViewModel = adminViewModel
@@ -315,9 +338,10 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                         onNavigateToTribes = { navController.navigate("manage_tribes") },
                         onNavigateToTribeWars = { navController.navigate("tribe_wars_admin") },
                         onNavigateToAnnouncements = { navController.navigate("announcements") },
+                        onNavigateToUrgentOverlay = { navController.navigate("create_urgent_overlay") },
                         onNavigateToGroups = { navController.navigate("manage_groups") },
                         onNavigateToCreateEvent = { navController.navigate("create_home_post") },
-                        onNavigateToPostPlay = { /* TODO */ },
+                        onNavigateToPostPlay = { },
                         onNavigateToUsers = { navController.navigate("admin_users") },
                         onNavigateToChurches = { navController.navigate("admin_churches") },
                         mainViewModel = mainViewModel,
@@ -485,7 +509,8 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     AddScoreScreen(
                         initialTribeId = tribeId,
                         onNavigateBack = { navController.popBackStack() },
-                        viewModel = adminViewModel
+                        viewModel = adminViewModel,
+                        mainViewModel = mainViewModel
                     )
                 }
             }
@@ -591,11 +616,27 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     adminViewModel = adminViewModel
                 )
             }
+            composable("create_urgent_overlay") {
+                CreateUrgentOverlayScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    viewModel = adminViewModel
+                )
+            }
             composable("profile") {
                 ProfileScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToNotificationPrefs = { navController.navigate("notification_prefs") },
                     viewModel = mainViewModel,
+                )
+            }
+            composable(
+                route = "public_profile/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+                PublicProfileScreen(
+                    userId = userId,
+                    onNavigateBack = { navController.popBackStack() },
+                    viewModel = mainViewModel
                 )
             }
             composable("notification_prefs") {

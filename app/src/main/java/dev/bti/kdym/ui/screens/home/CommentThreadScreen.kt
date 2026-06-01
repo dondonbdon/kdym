@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.ui.components.*
 import dev.bti.kdym.ui.components.home.FeedPostCard
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
@@ -30,7 +31,7 @@ import java.text.SimpleDateFormat
 fun CommentThreadScreen(
     postId: String,
     onNavigateBack: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val updates by viewModel.liveUpdates.collectAsState()
     val post = updates.find { it.id == postId } ?: return
@@ -89,7 +90,7 @@ fun CommentThreadScreen(
                     )
                 }
                 
-                items(comments) { comment ->
+                items(comments, key = { it.id }) { comment ->
 
                     val formattedTime = SimpleDateFormat("HH:mm", LocalLocale.current.platformLocale)
                         .format(comment.createdAt.toDate())

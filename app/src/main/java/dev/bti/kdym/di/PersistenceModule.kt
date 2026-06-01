@@ -40,4 +40,7 @@ object PersistenceModule {
 
     @Provides
     fun provideAppGroupDao(db: KdymDatabase) = db.appGroupDao()
+
+    @Provides
+    fun provideUserPreferenceDao(db: KdymDatabase) = db.userPreferenceDao()
 }

@@ -9,8 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import dev.bti.kdym.ui.theme.Background
 import dev.bti.kdym.ui.theme.CyanGlow
@@ -44,58 +47,71 @@ fun OutpourBackground(
             .fillMaxSize()
             .background(Background)
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // Draw Grid Mesh
-            val gridSize = 44.dp.toPx()
-            val gridColor = Color.White.copy(alpha = gridAlpha)
-            
-            // Vertical lines
-            var x = 0f
-            while (x < size.width) {
-                drawLine(
-                    color = gridColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, size.height),
-                    strokeWidth = 0.5.dp.toPx()
-                )
-                x += gridSize
-            }
-            
-            // Horizontal lines
-            var y = 0f
-            while (y < size.height) {
-                drawLine(
-                    color = gridColor,
-                    start = Offset(0f, y),
-                    end = Offset(size.width, y),
-                    strokeWidth = 0.5.dp.toPx()
-                )
-                y += gridSize
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    // This isolates the animated radial gradients to their own layer.
+                    // When pulseAlpha changes, only this layer is redrawn.
+                    alpha = 1.0f 
+                }
+                .drawWithCache {
+                    val gridSize = 44.dp.toPx()
+                    val gridColorValue = Color.White.copy(alpha = gridAlpha)
+                    val strokeWidthValue = 0.5.dp.toPx()
 
-            // Cyan Glow at top left
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(CyanGlow.copy(alpha = pulseAlpha), Color.Transparent),
-                    center = Offset(size.width * 0.1f, size.height * 0.1f),
-                    radius = size.width * 1.2f
-                ),
-                center = Offset(size.width * 0.1f, size.height * 0.1f),
-                radius = size.width * 1.2f
-            )
-            
-            // Red Glow at bottom right
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(RedGlow.copy(alpha = pulseAlpha), Color.Transparent),
-                    center = Offset(size.width * 0.9f, size.height * 0.9f),
-                    radius = size.width * 1.3f
-                ),
-                center = Offset(size.width * 0.9f, size.height * 0.9f),
-                radius = size.width * 1.3f
-            )
+                    onDrawWithContent {
+                        // Vertical lines
+                        var x = 0f
+                        while (x < size.width) {
+                            drawLine(
+                                color = gridColorValue,
+                                start = Offset(x, 0f),
+                                end = Offset(x, size.height),
+                                strokeWidth = strokeWidthValue
+                            )
+                            x += gridSize
+                        }
+
+                        // Horizontal lines
+                        var y = 0f
+                        while (y < size.height) {
+                            drawLine(
+                                color = gridColorValue,
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = strokeWidthValue
+                            )
+                            y += gridSize
+                        }
+
+                        // Cyan Glow at top left
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(CyanGlow.copy(alpha = pulseAlpha), Color.Transparent),
+                                center = Offset(size.width * 0.1f, size.height * 0.1f),
+                                radius = size.width * 1.2f
+                            ),
+                            center = Offset(size.width * 0.1f, size.height * 0.1f),
+                            radius = size.width * 1.2f
+                        )
+
+                        // Red Glow at bottom right
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(RedGlow.copy(alpha = pulseAlpha), Color.Transparent),
+                                center = Offset(size.width * 0.9f, size.height * 0.9f),
+                                radius = size.width * 1.3f
+                            ),
+                            center = Offset(size.width * 0.9f, size.height * 0.9f),
+                            radius = size.width * 1.3f
+                        )
+                        
+                        drawContent()
+                    }
+                }
+        ) {
+            content()
         }
-        
-        content()
     }
 }

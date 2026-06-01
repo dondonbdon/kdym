@@ -1,12 +1,21 @@
 package dev.bti.kdym.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +33,6 @@ import dev.bti.kdym.data.models.AppGroup
 import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
-import dev.bti.kdym.ui.utils.GroupIconHelper
 import dev.bti.kdym.ui.utils.TimeUtils
 
 @Composable
@@ -33,15 +41,10 @@ fun GroupListCard(
     modifier: Modifier = Modifier,
     currentUserId: String? = null,
     showChevron: Boolean = true,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     val isTribeGroup = group.type == AppGroupType.tribe
-    val icon = if (isTribeGroup) {
-        GroupIconHelper.getGroupIcon(group.iconName)
-    } else {
-        GroupIconHelper.getGroupIcon(group.iconName)
-    }
-    
+
     val color = remember(group.colorHex, isTribeGroup) {
         try {
             if (group.colorHex != null) Color(group.colorHex.toColorInt())
@@ -71,13 +74,12 @@ fun GroupListCard(
                     .background(color.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
+                MappedIcon(
+                    iosName = group.iconName ?: "",
                     tint = color,
                     modifier = Modifier.size(32.dp)
                 )
-                
+
                 if (unreadCount > 0) {
                     Box(
                         modifier = Modifier
@@ -121,14 +123,25 @@ fun GroupListCard(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(2.dp))
 
-                val subText = if (group.lastMessageText != null) {
-                    val sender = if (group.lastMessageSenderName != null) "${group.lastMessageSenderName}: " else ""
-                    "$sender${group.lastMessageText}"
-                } else {
-                    group.description ?: ""
+                val subText = when {
+                    !group.lastMessageSenderName.isNullOrBlank() -> {
+                        val sender = "${group.lastMessageSenderName}: "
+                        val content = if (!group.lastMessageText.isNullOrBlank()) {
+                            group.lastMessageText
+                        } else {
+                            "Sent an attachment"
+                        }
+                        "$sender$content"
+                    }
+                    !group.lastMessageText.isNullOrBlank() -> {
+                        group.lastMessageText
+                    }
+                    else -> {
+                        group.description ?: ""
+                    }
                 }
 
                 Text(
@@ -139,11 +152,12 @@ fun GroupListCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val timeText = TimeUtils.formatRelativeTime(group.lastMessageAt ?: group.createdAt)
+                    val timeText =
+                        TimeUtils.formatRelativeTime(group.lastMessageAt ?: group.createdAt)
                     Text(
                         text = timeText,
                         color = TextSecondary.copy(alpha = 0.5f),
@@ -151,7 +165,7 @@ fun GroupListCard(
                         fontWeight = FontWeight.Bold,
                         fontFamily = QuickSandFontFamily
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "•",

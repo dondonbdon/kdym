@@ -1,6 +1,7 @@
 package dev.bti.kdym.data.repositories
 
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -20,7 +21,9 @@ import kotlinx.coroutines.tasks.await
  */
 class TribeRepository(
     private val tribeDao: TribeDao? = null,
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+
 ) {
     /**
      * Returns a stream of tribes for a specific camp.
@@ -86,17 +89,34 @@ class TribeRepository(
      * Uses a Firestore transaction to ensure the tribe's total points and the score entry are written together.
      */
     suspend fun addScoreEntry(entry: ScoreEntry) {
+        // 2. SECURITY CHECK: Get current user
+        val currentUser = auth.currentUser ?: throw SecurityException("Unauthorized: User not logged in.")
+        val currentUserEmail = currentUser.email
+
+        // 3. Define the specifically allowed email
+        val allowedEmail = "your.authorized@email.com" // <-- Set your specific email here
+
+        // 4. Fetch the fresh user document to verify superAdmin status (prevents client spoofing)
+        val userDoc = firestore.collection("users").document(currentUser.uid).get().await()
+        val isSuperAdmin = userDoc.getBoolean("isSuperAdmin") ?: false // Adjust field name to match your DB
+
+        // 5. Evaluate permissions
+        if (!isSuperAdmin && currentUserEmail != allowedEmail) {
+            throw SecurityException("Unauthorized: You do not have permission to modify tribe scores.")
+        }
+
+        // 6. Proceed with the write if authorized
         val campId = entry.campId.ifEmpty { "camp_2026" }
         val tribeRef = firestore.collection("camps")
             .document(campId)
             .collection("tribes")
             .document(entry.tribeId)
-        
+
         val scoreRef = firestore.collection("camps")
             .document(campId)
             .collection("scoreEntries")
             .document()
-        
+
         firestore.runTransaction { transaction ->
             transaction.set(scoreRef, entry.copy(id = scoreRef.id))
             transaction.update(tribeRef, "totalPoints", FieldValue.increment(entry.points.toLong()))

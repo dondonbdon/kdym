@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.R
 import dev.bti.kdym.data.models.KDYMEvent
 import dev.bti.kdym.ui.components.GlassCard
@@ -41,8 +42,8 @@ fun EventDetailScreen(
     onNavigateToEdit: (String) -> Unit = {},
     onNavigateToCreateScheduleItem: (String) -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    viewModel: MainViewModel = viewModel(),
-    adminViewModel: dev.bti.kdym.viewmodels.AdminViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel(),
+    adminViewModel: dev.bti.kdym.viewmodels.AdminViewModel = hiltViewModel()
 ) {
     val events by viewModel.allEvents.collectAsState()
     val campSchedule by viewModel.campSchedule.collectAsState()

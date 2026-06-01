@@ -5,7 +5,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,9 +25,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,21 +54,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import dev.bti.kdym.ui.components.CommandInputField
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
-import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
+import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
 
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToNotificationPrefs: () -> Unit,
-    viewModel: MainViewModel = viewModel(),
+    viewModel: MainViewModel = hiltViewModel(),
 ) {
     val user by viewModel.user.collectAsState()
 
@@ -81,9 +109,18 @@ fun ProfileScreen(
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "BACK", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
 
@@ -100,7 +137,12 @@ fun ProfileScreen(
                             .background(Color(0xFF22D3EE).copy(0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = Color(0xFF22D3EE), modifier = Modifier.size(28.dp))
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color(0xFF22D3EE),
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
@@ -184,7 +226,8 @@ fun ProfileScreen(
                 // Account info section
                 AccountInfoCard(
                     role = user?.roleEnum?.title ?: "Camper",
-                    access = if (user?.hasApprovedCampAccess == true) "Camp Access Approved" else user?.accessStatus ?: "Public"
+                    access = if (user?.hasApprovedCampAccess == true) "Camp Access Approved" else user?.accessStatus
+                        ?: "Public"
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -209,12 +252,24 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
                     shape = RoundedCornerShape(32.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "SAVE PROFILE", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily, fontSize = 16.sp)
+                    Text(
+                        text = "SAVE PROFILE",
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily,
+                        fontSize = 16.sp
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(140.dp))
@@ -225,7 +280,12 @@ fun ProfileScreen(
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Delete Account?", color = Color.White) },
-                text = { Text("This will permanently delete your KDYM account and sign you out. This action cannot be undone.", color = Color.White.copy(0.7f)) },
+                text = {
+                    Text(
+                        "This will permanently delete your KDYM account and sign you out. This action cannot be undone.",
+                        color = Color.White.copy(0.7f)
+                    )
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.softDeleteUser()
@@ -266,7 +326,10 @@ fun ProfileEditHeader(
             Box(
                 modifier = Modifier
                     .size(96.dp)
-                    .background(Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFF22D3EE))), CircleShape),
+                    .background(
+                        Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFF22D3EE))),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 val model = selectedImageUri ?: photoUrl
@@ -281,7 +344,8 @@ fun ProfileEditHeader(
                     )
                 } else {
                     Text(
-                        text = (userDisplayName?.take(1) ?: "K") + (userDisplayName?.split(" ")?.getOrNull(1)?.take(1) ?: "D"),
+                        text = (userDisplayName?.take(1) ?: "K") + (userDisplayName?.split(" ")
+                            ?.getOrNull(1)?.take(1) ?: "D"),
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black
@@ -308,12 +372,20 @@ fun ProfileEditHeader(
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onChangePhoto,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                     modifier = Modifier.height(36.dp)
                 ) {
-                    Text(text = "CHANGE PHOTO", fontWeight = FontWeight.Black, fontSize = 11.sp, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "CHANGE PHOTO",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 11.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
         }
@@ -329,9 +401,20 @@ fun AccountInfoCard(role: String, access: String) {
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = Color(0xFF22D3EE), modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = Color(0xFF22D3EE),
+                    modifier = Modifier.size(18.dp)
+                )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = "Account", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                Text(
+                    text = "Account",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
             AccountInfoRow(label = "ROLE", value = role)
@@ -343,9 +426,26 @@ fun AccountInfoCard(role: String, access: String) {
 
 @Composable
 fun AccountInfoRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(text = label, color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, fontFamily = QuickSandFontFamily)
-        Text(text = value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 1.sp,
+            fontFamily = QuickSandFontFamily
+        )
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = QuickSandFontFamily
+        )
     }
 }
 
@@ -365,11 +465,22 @@ fun DangerZoneRedesign(onDeleteClick: () -> Unit) {
                         .background(Color(0xFFEF4444).copy(0.1f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(imageVector = Icons.Default.Warning, contentDescription = null, tint = RedAccent, modifier = Modifier.size(20.dp))
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = RedAccent,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text(text = "Danger Zone", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "Danger Zone",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
                     Text(
                         text = "Permanently delete your KDYM account, remove this device from notifications, anonymize your profile, and sign out.",
                         color = TextSecondary,
@@ -385,13 +496,25 @@ fun DangerZoneRedesign(onDeleteClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RedAccent.copy(0.1f), contentColor = RedAccent),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RedAccent.copy(0.1f),
+                    contentColor = RedAccent
+                ),
                 shape = RoundedCornerShape(12.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, RedAccent.copy(0.3f))
             ) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "DELETE ACCOUNT", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                Text(
+                    text = "DELETE ACCOUNT",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 12.sp,
+                    fontFamily = QuickSandFontFamily
+                )
             }
         }
     }

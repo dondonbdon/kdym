@@ -3,6 +3,9 @@ package dev.bti.kdym.viewmodels
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import dev.bti.kdym.data.local.AppPrefs
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseUser
 import dev.bti.kdym.data.firebase.FcmManager
@@ -26,18 +29,22 @@ data class UIState(
  * Main ViewModel for handling authentication, user profile, feed updates, and global app configuration.
  * Implements optimistic updates for smoother user interactions in the feed and comments sections.
  */
+@HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
-class MainViewModel(
-    private val authRepository: AuthRepository = AuthRepository(),
-    private val userRepository: UserRepository = UserRepository(),
-    private val appConfigRepository: AppConfigRepository = AppConfigRepository(),
-    private val feedRepository: FeedRepository = FeedRepository(),
-    private val eventRepository: EventRepository = EventRepository(),
-    private val announcementRepository: AnnouncementRepository = AnnouncementRepository(),
-    private val storageRepository: StorageRepository = StorageRepository(),
-    private val churchRepository: ChurchRepository = ChurchRepository(),
-    private val campRepository: CampRepository = CampRepository(),
-    private val playRepository: PlayRepository = PlayRepository(),
+class MainViewModel @Inject constructor(
+    private val prefs: AppPrefs,
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository,
+    appConfigRepository: AppConfigRepository,
+    private val feedRepository: FeedRepository,
+    private val eventRepository: EventRepository,
+    announcementRepository: AnnouncementRepository,
+    private val storageRepository: StorageRepository,
+    churchRepository: ChurchRepository,
+    private val campRepository: CampRepository,
+    private val playRepository: PlayRepository,
+    globalOverlayRepository: GlobalOverlayRepository,
+    private val userPreferenceDao: dev.bti.kdym.data.local.UserPreferenceDao
 ) : ViewModel() {
 
     private val _firebaseUser = authRepository.currentUser
@@ -52,8 +59,13 @@ class MainViewModel(
 
     val user: StateFlow<AppUser?> = firebaseUser
         .flatMapLatest { fbUser ->
-            if (fbUser != null) userRepository.getUser(fbUser.uid)
-            else flowOf(null)
+            if (fbUser != null) {
+                userRepository.getUser(fbUser.uid)
+                    .onEach { user -> user?.let { prefs.saveAppUser(it) } }
+                    .onStart { prefs.appUser.firstOrNull()?.let { emit(it) } }
+            } else {
+                flowOf(null)
+            }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
@@ -78,19 +90,94 @@ class MainViewModel(
     val announcements: StateFlow<List<Announcement>> = announcementRepository.getPublishedAnnouncements()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val globalOverlay: StateFlow<GlobalOverlay?> = globalOverlayRepository.getGlobalOverlay()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     private val _uiState = MutableStateFlow(UIState())
     val uiState: StateFlow<UIState> = _uiState.asStateFlow()
 
-    private val prefs = RepositoryProvider.prefs
+    private val _guessedTribeOptimistic = MutableStateFlow<String?>(null)
+    private val _isGuessedTribeOverrideActive = MutableStateFlow(false)
 
-    val guessedTribe: StateFlow<String?> = (prefs?.guessedTribe ?: flowOf(null))
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val guessedTribe: StateFlow<String?> = combine(
+        prefs.guessedTribe,
+        _guessedTribeOptimistic,
+        _isGuessedTribeOverrideActive
+    ) { real, optimistic, override ->
+        if (override) optimistic else real
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val tribeRevealShown: StateFlow<Boolean> = (prefs?.tribeRevealShown ?: flowOf(false))
+    private val _tribeRevealShownOptimistic = MutableStateFlow<Boolean?>(null)
+
+    val tribeRevealShown: StateFlow<Boolean> = firebaseUser
+        .flatMapLatest { fbUser ->
+            if (fbUser != null) {
+                userPreferenceDao.getUserPreferences(fbUser.uid)
+                    .map { it?.tribeRevealShown ?: false }
+            } else {
+                flowOf(false)
+            }
+        }
+        .combine(_tribeRevealShownOptimistic) { persistent, optimistic ->
+            optimistic ?: persistent
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _shouldRequestPermissions = MutableStateFlow(false)
     val shouldRequestPermissions: StateFlow<Boolean> = _shouldRequestPermissions.asStateFlow()
+
+    private val _dismissedOverlayId = MutableStateFlow<String?>(null)
+    private val _overlayDismissalTime = MutableStateFlow(0L)
+
+    val isOverlayRecentlyDismissed: Flow<Boolean> = combine(
+        globalOverlay,
+        _dismissedOverlayId,
+        _overlayDismissalTime
+    ) { overlay, dismissedId, dismissalTime ->
+        if (overlay == null || dismissedId != overlay.id) return@combine false
+        val sixtyMinutesInMillis = 60 * 60 * 1000L
+        System.currentTimeMillis() - dismissalTime < sixtyMinutesInMillis
+    }
+
+    private val _forceShowOverlay = MutableStateFlow(false)
+    val shouldShowOverlay: Flow<Boolean> = combine(
+        globalOverlay,
+        user,
+        _dismissedOverlayId,
+        _forceShowOverlay
+    ) { overlay, currentUser, dismissedId, forceShow ->
+        if (overlay == null || !overlay.isActive) return@combine false
+        if (forceShow) return@combine true
+
+        // Exclude sender
+        if (overlay.senderId == currentUser?.uid) return@combine false
+
+        // Check if already dismissed
+        if (dismissedId == overlay.id) return@combine false
+
+        // Apply filters
+        if (overlay.excludeAdmins && currentUser?.isAdmin == true) return@combine false
+        if (overlay.campAccessOnly && currentUser?.hasApprovedCampAccess != true) return@combine false
+
+        if (overlay.targetEmails.isNotEmpty() && currentUser?.email !in overlay.targetEmails) return@combine false
+
+        true
+    }
+
+    fun dismissOverlay() {
+        val currentOverlay = globalOverlay.value ?: return
+        val now = System.currentTimeMillis()
+        viewModelScope.launch {
+            prefs.saveOverlayDismissal(currentOverlay.id, now)
+            _dismissedOverlayId.value = currentOverlay.id
+            _overlayDismissalTime.value = now
+            _forceShowOverlay.value = false
+        }
+    }
+
+    fun showOverlayAgain() {
+        _forceShowOverlay.value = true
+    }
 
     fun triggerPermissionRequest() {
         _shouldRequestPermissions.value = true
@@ -112,6 +199,15 @@ class MainViewModel(
      */
     fun setLoading(isLoading: Boolean) {
         _uiState.update { it.copy(isLoading = isLoading) }
+    }
+
+    init {
+        viewModelScope.launch {
+            prefs.dismissedOverlayId.collect { _dismissedOverlayId.value = it }
+        }
+        viewModelScope.launch {
+            prefs.overlayDismissalTime.collect { _overlayDismissalTime.value = it }
+        }
     }
 
     /**
@@ -146,6 +242,13 @@ class MainViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Returns a stream of a specific user's profile for public viewing.
+     */
+    fun getUserProfile(uid: String): Flow<AppUser?> {
+        return userRepository.getUser(uid)
     }
 
     // --- Authentication Actions ---
@@ -593,18 +696,36 @@ class MainViewModel(
 
     fun guessTribe(tribeName: String) {
         val uid = firebaseUser.value?.uid ?: return
+        _guessedTribeOptimistic.value = tribeName
+        _isGuessedTribeOverrideActive.value = true
         viewModelScope.launch {
             try {
                 userRepository.updateUser(uid, mapOf("guessedTribe" to tribeName))
-                prefs?.saveGuessedTribe(tribeName)
-            } catch (e: Exception) {
+                prefs.saveGuessedTribe(tribeName)
+            } catch (_: Exception) {
                 showFeedback("Failed to save guess", isError = true)
+            } finally {
+                _isGuessedTribeOverrideActive.value = false
             }
         }
     }
 
-    fun setTribeRevealShown(shown: Boolean) = viewModelScope.launch {
-        prefs?.saveTribeRevealShown(shown)
+    fun setTribeRevealShown(shown: Boolean) {
+        val uid = firebaseUser.value?.uid ?: return
+        _tribeRevealShownOptimistic.value = shown
+
+        viewModelScope.launch {
+            try {
+                userPreferenceDao.insertUserPreference(
+                    dev.bti.kdym.data.local.UserPreferenceEntity(
+                        userId = uid,
+                        tribeRevealShown = shown
+                    )
+                )
+            } catch (e: Exception) {
+                // Silently fail or log
+            }
+        }
     }
 
     val allEvents: StateFlow<List<KDYMEvent>> = eventRepository.getAllPublishedEvents()

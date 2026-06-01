@@ -1,44 +1,105 @@
 package dev.bti.kdym.ui.screens.groups
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import kotlinx.coroutines.delay
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Diversity3
+import androidx.compose.material.icons.filled.ElectricBolt
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.data.models.Tribe
-import dev.bti.kdym.ui.components.*
-import dev.bti.kdym.ui.components.home.GlitchText
+import dev.bti.kdym.ui.components.GlassCard
+import dev.bti.kdym.ui.components.GroupListCard
+import dev.bti.kdym.ui.components.MappedIcon
+import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.RubikGlitchFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 import dev.bti.kdym.viewmodels.GroupsViewModel
 import dev.bti.kdym.viewmodels.MainViewModel
-import java.time.LocalDateTime
+import kotlinx.coroutines.delay
+import java.time.Duration
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.Duration
 
 @Composable
 fun CommunityScreen(
@@ -48,9 +109,18 @@ fun CommunityScreen(
     onExploreGroups: () -> Unit,
     onCreateGroup: () -> Unit,
     onAddScore: () -> Unit = {},
-    viewModel: GroupsViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel = hiltViewModel(),
-    adminViewModel: AdminViewModel
+    viewModel: GroupsViewModel = hiltViewModel(
+        viewModelStoreOwner = LocalViewModelStoreOwner.current!!,
+        key = "groups_vm_community"
+    ),
+    mainViewModel: MainViewModel = hiltViewModel(
+        viewModelStoreOwner = LocalViewModelStoreOwner.current!!,
+        key = "main_vm_community"
+    ),
+    adminViewModel: AdminViewModel = hiltViewModel(
+        viewModelStoreOwner = LocalViewModelStoreOwner.current!!,
+        key = "admin_vm_community"
+    )
 ) {
     val appConfig by mainViewModel.appConfig.collectAsState()
     val isCampMode = appConfig?.campModeEnabled ?: false
@@ -78,6 +148,10 @@ fun CommunityScreen(
     // Reactive timer state
     var isPastReveal by remember { mutableStateOf(ZonedDateTime.now(kansasZone).isAfter(targetZonedDateTime)) }
 
+    val isSuperAdminOrAllowedEmail = remember(user) {
+        user?.roleEnum?.isSuperAdmin == true || user?.email == "nathanleonard1127@gmail.com".trim()
+    }
+
     LaunchedEffect(Unit) {
         while (!isPastReveal) {
             delay(1000)
@@ -85,13 +159,16 @@ fun CommunityScreen(
         }
     }
 
-    var showManualReveal by remember { mutableStateOf(false) } // State for manual trigger button
+    var showManualReveal by remember { mutableStateOf(false) }
 
-    // Automatically trigger reveal when time is past and user is assigned but hasn't seen it
     val isAssigned = user?.tribeId != null
-    LaunchedEffect(isPastReveal, tribeRevealShown, isAssigned) {
-        if (isPastReveal && !tribeRevealShown && isAssigned) {
-            showManualReveal = true
+    LaunchedEffect(isPastReveal, isAssigned) {
+        if (isPastReveal && isAssigned) {
+            delay(500)
+
+            if (!mainViewModel.tribeRevealShown.value) {
+                showManualReveal = true
+            }
         }
     }
 
@@ -99,13 +176,8 @@ fun CommunityScreen(
         (user?.roleEnum?.canAccessCampContent == true || user?.isAdmin == true)
     }
 
-    val showTabs = canSeeTribeWars
-
     Scaffold(
         containerColor = Color.Transparent,
-        floatingActionButton = {
-            // FAB removed in favor of top menu per request
-        }
     ) { padding ->
         OutpourBackground {
             Column(
@@ -115,19 +187,43 @@ fun CommunityScreen(
             ) {
                 // Community Header
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    ScreenHeader(
-                        title = "COMMUNITY",
-                        subtitle = "Connect with your camp family.",
-                        icon = Icons.Default.Diversity3,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xFFEF4444).copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Diversity3,
+                                contentDescription = null,
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Text(
+                            text = "COMMUNITY",
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = QuickSandFontFamily
+                        )
+                    }
 
-                    if (user?.isAdmin == true) {
-                        Row(modifier = Modifier.padding(end = 16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if ((user?.isAdmin == true || user?.roleEnum?.isTribeLeader == true) && selectedTab == "GROUPS") {
                             IconButton(
                                 onClick = { viewModel.toggleAdminViewMode() },
                                 modifier = Modifier
@@ -141,9 +237,14 @@ fun CommunityScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
 
-                            Spacer(modifier = Modifier.width(16.dp))
 
+
+                        val shouldShowMenu = selectedTab == "GROUPS" || (selectedTab == "TRIBE_WARS" && isSuperAdminOrAllowedEmail)
+
+                        if (shouldShowMenu) {
                             var showMenu by remember { mutableStateOf(false) }
                             Box {
                                 IconButton(
@@ -160,22 +261,27 @@ fun CommunityScreen(
                                     modifier = Modifier.background(Color(0xFF1A1A1A))
                                 ) {
                                     if (selectedTab == "GROUPS") {
-                                        DropdownMenuItem(
-                                            text = { Text("Create Group", color = Color.White) },
-                                            leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                                            onClick = { showMenu = false; onCreateGroup() }
-                                        )
+                                        if (user?.isAdmin == true) {
+                                            DropdownMenuItem(
+                                                text = { Text("Create Group", color = Color.White) },
+                                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
+                                                onClick = { showMenu = false; onCreateGroup() }
+                                            )
+                                        }
+
                                         DropdownMenuItem(
                                             text = { Text("Explore Groups", color = Color.White) },
                                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
                                             onClick = { showMenu = false; onExploreGroups() }
                                         )
                                     } else if (selectedTab == "TRIBE_WARS") {
-                                        DropdownMenuItem(
-                                            text = { Text("Add Score", color = Color.White) },
-                                            leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                                            onClick = { showMenu = false; onAddScore() }
-                                        )
+                                        if (isSuperAdminOrAllowedEmail) {
+                                            DropdownMenuItem(
+                                                text = { Text("Add Score", color = Color.White) },
+                                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
+                                                onClick = { showMenu = false; onAddScore() }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -184,7 +290,7 @@ fun CommunityScreen(
                 }
 
                 // Tab Switcher
-                if (showTabs) {
+                if (canSeeTribeWars) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -193,7 +299,7 @@ fun CommunityScreen(
                     ) {
                         CommunityTabButton(
                             label = "GROUPS",
-                            icon = Icons.Default.Forum,
+                            icon = Icons.Default.Group,
                             isSelected = selectedTab == "GROUPS",
                             modifier = Modifier.weight(1f)
                         ) { viewModel.selectTab("GROUPS") }
@@ -220,14 +326,14 @@ fun CommunityScreen(
                                     targetZonedDateTime = targetZonedDateTime,
                                     onRevealClick = { showManualReveal = true }
                                 )
-                            }
-                            else GroupsTab(
+                            } else GroupsTab(
                                 onNavigateToChat = onNavigateToChat,
                                 onExploreGroups = onExploreGroups,
                                 onCreateGroup = onCreateGroup,
                                 viewModel = viewModel,
                                 mainViewModel = mainViewModel,
-                                adminOnly = showOnlyAdminGroups
+                                tribes = tribes,
+                                adminOnly = adminViewMode
                             )
                         }
                         "GROUPS" -> GroupsTab(
@@ -236,6 +342,7 @@ fun CommunityScreen(
                             onCreateGroup = onCreateGroup,
                             viewModel = viewModel,
                             mainViewModel = mainViewModel,
+                            tribes = tribes,
                             adminOnly = adminViewMode
                         )
                         else -> GroupsTab(
@@ -244,6 +351,7 @@ fun CommunityScreen(
                             onCreateGroup = onCreateGroup,
                             viewModel = viewModel,
                             mainViewModel = mainViewModel,
+                            tribes = tribes,
                             adminOnly = adminViewMode
                         )
                     }
@@ -313,14 +421,21 @@ fun GroupsTab(
     onCreateGroup: () -> Unit,
     viewModel: GroupsViewModel,
     mainViewModel: MainViewModel,
+    tribes: List<Tribe>,
     adminOnly: Boolean = false
 ) {
     val allGroups by viewModel.groups.collectAsState()
     val user by mainViewModel.user.collectAsState()
 
     val groups = remember(allGroups, adminOnly, user) {
-        if (adminOnly && user != null) {
-            allGroups.filter { it.leaderIds.contains(user!!.uid) || it.createdBy == user!!.uid }
+        val uid = user?.uid ?: return@remember emptyList()
+        if (adminOnly) {
+            allGroups.filter { group ->
+                group.leaderIds.contains(uid) ||
+                        group.createdBy == uid ||
+                        group.memberIds.contains(uid) ||
+                        (group.type == AppGroupType.tribe && group.tribeId == user!!.tribeId)
+            }
         } else {
             allGroups
         }
@@ -402,8 +517,18 @@ fun GroupsTab(
                 }
             }
         } else {
-            items(groups) { group ->
-                GroupListCard(group = group, onClick = { onNavigateToChat(group.id) })
+            items(groups, key = { it.id }) { group ->
+                val effectiveGroup = if (group.type == AppGroupType.tribe) {
+                    val matchingTribe = tribes.find { it.id == group.tribeId }
+                    if (matchingTribe != null) {
+                        group.copy(
+                            iconName = matchingTribe.iconName,
+                            colorHex = matchingTribe.colorHex
+                        )
+                    } else group
+                } else group
+
+                GroupListCard(group = effectiveGroup, onClick = { onNavigateToChat(group.id) })
             }
         }
     }
@@ -412,7 +537,10 @@ fun GroupsTab(
 @Composable
 fun TribeWarsTab(
     viewModel: AdminViewModel,
-    mainViewModel: MainViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel(
+        viewModelStoreOwner = LocalViewModelStoreOwner.current!!,
+        key = "main_vm_tribe_tab"
+    ),
     isPastReveal: Boolean,
     isCampMode: Boolean,
     targetZonedDateTime: ZonedDateTime,
@@ -476,7 +604,7 @@ fun TribeWarsTab(
                     }
                 }
 
-                items(tribes) { tribe ->
+                items(tribes, key = { it.id }) { tribe ->
                     TribeSimpleScoreCard(tribe)
                 }
             }
@@ -629,24 +757,27 @@ fun TribeRevealCard(isAssigned: Boolean, canReveal: Boolean, onRevealClick: () -
                     label = "offset"
                 )
 
-                val shiftingBrush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFFEF4444), // Red
-                        Color(0xFFF59E0B), // Orange
-                        Color(0xFF10B981), // Green
-                        Color(0xFF22D3EE), // Blue
-                        Color(0xFFEF4444)  // Loop back to red
-                    ),
-                    start = androidx.compose.ui.geometry.Offset(gradientOffset - 1000f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(gradientOffset, 0f)
-                )
-
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
                         .clip(RoundedCornerShape(28.dp))
-                        .background(shiftingBrush)
+                        .drawWithCache {
+                            val shiftingBrush = Brush.linearGradient(
+                                colors = listOf(
+                                    Color(0xFFEF4444), // Red
+                                    Color(0xFFF59E0B), // Orange
+                                    Color(0xFF10B981), // Green
+                                    Color(0xFF22D3EE), // Blue
+                                    Color(0xFFEF4444)  // Loop back to red
+                                ),
+                                start = androidx.compose.ui.geometry.Offset(gradientOffset - 1000f, 0f),
+                                end = androidx.compose.ui.geometry.Offset(gradientOffset, 0f)
+                            )
+                            onDrawBehind {
+                                drawRect(shiftingBrush)
+                            }
+                        }
                         .clickable { onRevealClick() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -677,10 +808,12 @@ fun TribeRevealOverlay(
     onDismiss: () -> Unit,
     onNavigateToChat: (String) -> Unit
 ) {
-    val tribeColor = try {
-        Color(tribe.colorHex.toColorInt())
-    } catch (_: Exception) {
-        Color(0xFF22D3EE)
+    val tribeColor = remember(tribe.colorHex) {
+        try {
+            Color(tribe.colorHex.toColorInt())
+        } catch (_: Exception) {
+            Color(0xFF22D3EE)
+        }
     }
 
     var isRevealed by remember { mutableStateOf(false) }
@@ -713,7 +846,7 @@ fun TribeRevealOverlay(
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(48.dp))
                     Text(
-                        text = "DECRYPTING ASSIGNMENT...",
+                        text = "FINDING YOUR TRIBE...",
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
@@ -753,9 +886,8 @@ fun TribeRevealOverlay(
                             .border(2.dp, tribeColor.copy(0.5f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = dev.bti.kdym.ui.utils.GroupIconHelper.getGroupIcon(tribe.iconName),
-                            contentDescription = null,
+                        MappedIcon(
+                            iosName = tribe.iconName ?: "shield.fill",
                             tint = tribeColor,
                             modifier = Modifier.size(60.dp)
                         )
@@ -927,10 +1059,12 @@ fun InfoRow(icon: ImageVector, title: String, desc: String) {
 
 @Composable
 fun TribeSimpleScoreCard(tribe: Tribe) {
-    val color = try {
-        Color(tribe.colorHex.toColorInt())
-    } catch (_: Exception) {
-        Color(0xFFEF4444)
+    val color = remember(tribe.colorHex) {
+        try {
+            Color(tribe.colorHex.toColorInt())
+        } catch (_: Exception) {
+            Color(0xFFEF4444)
+        }
     }
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
@@ -954,9 +1088,8 @@ fun TribeSimpleScoreCard(tribe: Tribe) {
                     .background(color.copy(0.2f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = dev.bti.kdym.ui.utils.GroupIconHelper.getGroupIcon(tribe.iconName),
-                    contentDescription = null,
+                MappedIcon(
+                    iosName = tribe.iconName ?: "shield.fill",
                     tint = color,
                     modifier = Modifier.size(24.dp)
                 )

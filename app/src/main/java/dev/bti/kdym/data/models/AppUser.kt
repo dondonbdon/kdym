@@ -1,6 +1,7 @@
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.PropertyName
 import kotlinx.serialization.Serializable
@@ -40,14 +41,6 @@ data class AppUser(
 
     val guessedTribe: String? = null,
 
-    @get:PropertyName("isAdmin")
-    @set:PropertyName("isAdmin")
-    var isAdmin: Boolean = false,
-
-    @get:PropertyName("isLeader")
-    @set:PropertyName("isLeader")
-    var isLeader: Boolean = false,
-
     @get:PropertyName("isDeleted")
     @set:PropertyName("isDeleted")
     var isDeleted: Boolean = false,
@@ -76,6 +69,16 @@ data class AppUser(
     val statusEnum: AccessStatus get() = AccessStatus.fromString(accessStatus)
 
     /**
+     * Role-based booleans (Phasing out explicit stored flags)
+     */
+    @get:Exclude
+    val isAdmin: Boolean get() = roleEnum.isAdmin
+    @get:Exclude
+    val isLeader: Boolean get() = roleEnum.isLeader
+    @get:Exclude
+    val isPublic: Boolean get() = roleEnum.isPublic
+
+    /**
      * Generates initials from the display name for use in placeholders.
      */
     val initials: String
@@ -101,23 +104,23 @@ data class AppUser(
     // =========================================================================
 
     val hasCommandAccess: Boolean
-        get() = roleEnum.canAccessCommand || isAdmin || isLeader || email == "don@don.don"
+        get() = roleEnum.canAccessCommand
 
     val canManageCampSettings: Boolean
-        get() = isAdmin || roleEnum.canManageCampSettings
+        get() = roleEnum.canManageCampSettings
 
     val canManageApprovals: Boolean
-        get() = isAdmin || isLeader || roleEnum.canManageApprovals
+        get() = roleEnum.canManageApprovals
 
     val canManageTribes: Boolean
-        get() = isAdmin || isLeader || roleEnum.canManageTribes
+        get() = roleEnum.canManageTribes
 
     val canManagePoints: Boolean
-        get() = isAdmin || isLeader || roleEnum.canManagePoints
+        get() = roleEnum.canManagePoints
 
     val canManageAnnouncements: Boolean
-        get() = isAdmin || isLeader || roleEnum.canManageAnnouncements
+        get() = roleEnum.canManageAnnouncements
 
     val canManageGroups: Boolean
-        get() = isAdmin || isLeader || roleEnum.canManageGroups
+        get() = roleEnum.canManageGroups
 }

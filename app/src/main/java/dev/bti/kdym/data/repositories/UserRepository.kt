@@ -22,24 +22,12 @@ class UserRepository(
 ) {
     /**
      * Returns a stream of a specific user's profile.
-     * Prioritizes local cache while syncing with network updates.
      */
     fun getUser(uid: String): Flow<AppUser?> {
-        val networkFlow = firestore.collection("users")
+        return firestore.collection("users")
             .document(uid)
             .snapshots()
             .map { it.toObject(AppUser::class.java) }
-            .onEach { user ->
-                user?.let { appPrefs?.saveAppUser(it) }
-            }
-
-        return if (appPrefs != null) {
-            networkFlow.onStart {
-                appPrefs.appUser.firstOrNull()?.let { emit(it) }
-            }
-        } else {
-            networkFlow
-        }
     }
 
     /**

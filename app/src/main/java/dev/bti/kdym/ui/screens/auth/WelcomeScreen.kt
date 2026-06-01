@@ -269,7 +269,8 @@ fun WelcomeCarouselPageContent(
 
                     GlitchText(
                         text = page.glitchTitle,
-                        fontSize = finalFontSize.sp
+                        fontSize = finalFontSize.sp,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

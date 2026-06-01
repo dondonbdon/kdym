@@ -3,6 +3,7 @@ package dev.bti.kdym.data.repositories
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import android.util.Log
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
 import dev.bti.kdym.data.local.*
@@ -25,8 +26,7 @@ class GroupRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
     /**
-     * Returns a stream of active groups for a user.
-     * Prioritizes local cache while syncing with network updates.
+     * Returns a stream of active groups for a user, prioritized by local cache then synced via Firestore.
      */
     fun getGroupsForUser(uid: String, tribeId: String? = null): Flow<List<AppGroup>> {
         val networkFlow = flow {
@@ -35,8 +35,8 @@ class GroupRepository(
                 .whereEqualTo("isActive", true)
                 .snapshots()
 
-            val publicQuery = firestore.collection("groups")
-                .whereEqualTo("isPublic", true)
+            val leaderQuery = firestore.collection("groups")
+                .whereArrayContains("leaderIds", uid)
                 .whereEqualTo("isActive", true)
                 .snapshots()
 
@@ -49,14 +49,14 @@ class GroupRepository(
                 flowOf(null)
             }
 
-            combine(memberQuery, publicQuery, tribeQuery) { memberSnap, publicSnap, tribeSnap ->
+            combine(memberQuery, leaderQuery, tribeQuery) { memberSnap, leaderSnap, tribeSnap ->
                 val allDocs = mutableListOf<AppGroup>()
 
                 memberSnap.documents.forEach { doc ->
                     doc.toObject(AppGroup::class.java)?.copy(id = doc.id)?.let { allDocs.add(it) }
                 }
 
-                publicSnap.documents.forEach { doc ->
+                leaderSnap.documents.forEach { doc ->
                     doc.toObject(AppGroup::class.java)?.copy(id = doc.id)?.let { group ->
                         if (allDocs.none { it.id == group.id }) {
                             allDocs.add(group)
@@ -74,17 +74,18 @@ class GroupRepository(
 
                 allDocs.sortedByDescending { it.lastMessageAt ?: it.createdAt }
             }.onEach { groups ->
+                val groupIds = groups.joinToString { it.id }
                 appGroupDao?.insertGroups(groups.map { it.toEntity() })
             }.collect { emit(it) }
-        }
+        }.onStart { emit(emptyList()) }
 
-        return if (appGroupDao != null) {
-            combine(
-                appGroupDao.getGroups().map { entities -> entities.map { it.toModel() } },
-                networkFlow
-            ) { cached, network -> network.ifEmpty { cached } }
-        } else {
-            networkFlow
+        val cachedFlow = appGroupDao?.getGroups()?.map { entities -> 
+            entities.map { it.toModel() }
+        } ?: flowOf(emptyList())
+
+        return combine(cachedFlow, networkFlow) { cached, network ->
+            val result = network.ifEmpty { cached }
+            result
         }
     }
 
@@ -101,7 +102,7 @@ class GroupRepository(
                         id = doc.id
                     )
                 }
-            }
+            }.onStart { emit(emptyList()) }
     }
 
     /**
@@ -118,14 +119,14 @@ class GroupRepository(
                         id = doc.id
                     )
                 }
-            }
+            }.onStart { emit(emptyList()) }
     }
 
     /**
      * Returns a stream of the most recent messages for a group.
      * Prioritizes local cache while syncing with network updates.
      */
-    fun getMessages(groupId: String, limit: Long = 50, startAfterTimestamp: com.google.firebase.Timestamp? = null): Flow<List<GroupMessage>> {
+    fun getMessages(groupId: String, limit: Long = 50, startAfterTimestamp: Timestamp? = null): Flow<List<GroupMessage>> {
         val networkFlow = firestore.collection("groups")
             .document(groupId)
             .collection("messages")
@@ -143,13 +144,17 @@ class GroupRepository(
                 if (startAfterTimestamp == null) {
                     groupMessageDao?.insertMessages(messages.map { it.toEntity() })
                 }
-            }
+            }.onStart { emit(emptyList()) }
 
-        return if (groupMessageDao != null && startAfterTimestamp == null) {
-            combine(
-                groupMessageDao.getMessages(groupId).map { entities -> entities.map { it.toModel() } },
-                networkFlow
-            ) { cached, network -> network.ifEmpty { cached } }
+        val cachedFlow = groupMessageDao?.getMessages(groupId)?.map { entities -> 
+            entities.map { it.toModel() }
+        } ?: flowOf(emptyList())
+
+        return if (startAfterTimestamp == null) {
+            combine(cachedFlow, networkFlow) { cached, network -> 
+                val output = network.ifEmpty { cached }
+                output
+            }
         } else {
             networkFlow
         }
@@ -361,7 +366,7 @@ class GroupRepository(
      * Submits a request to join a group.
      */
     suspend fun requestJoinGroup(request: GroupJoinRequest) {
-        val ref = firestore.collection("groupRequests").document()
+        val ref = firestore.collection("groupJoinRequests").document()
         ref.set(request.copy(id = ref.id)).await()
     }
 
@@ -369,7 +374,7 @@ class GroupRepository(
      * Returns a stream of join requests for a specific user.
      */
     fun getJoinRequestsForUser(uid: String): Flow<List<GroupJoinRequest>> {
-        return firestore.collection("groupRequests")
+        return firestore.collection("groupJoinRequests")
             .whereEqualTo("requesterId", uid)
             .snapshots()
             .map { snap ->
@@ -381,7 +386,7 @@ class GroupRepository(
      * Returns a stream of pending join requests for a specific group (for admins/leaders).
      */
     fun getJoinRequestsForGroup(groupId: String): Flow<List<GroupJoinRequest>> {
-        return firestore.collection("groupRequests")
+        return firestore.collection("groupJoinRequests")
             .whereEqualTo("groupId", groupId)
             .whereEqualTo("status", "pending")
             .snapshots()
@@ -394,7 +399,7 @@ class GroupRepository(
      * Updates the status of a join request.
      */
     suspend fun updateJoinRequestStatus(requestId: String, status: String, reviewedBy: String) {
-        firestore.collection("groupRequests").document(requestId).update(
+        firestore.collection("groupJoinRequests").document(requestId).update(
             "status", status,
             "reviewedBy", reviewedBy,
             "reviewedAt", Timestamp.now(),

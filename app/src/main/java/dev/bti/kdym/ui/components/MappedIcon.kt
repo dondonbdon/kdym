@@ -3,38 +3,11 @@ package dev.bti.kdym.ui.components
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Audiotrack
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Brush
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.CleanHands
-import androidx.compose.material.icons.filled.Collections
-import androidx.compose.material.icons.filled.ConnectWithoutContact
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.FamilyRestroom
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.LocationCity
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Piano
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Stadium
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -104,12 +77,17 @@ fun mapIconToSFString(icon: ImageVector): String {
         Icons.Filled.Shield -> "shield.fill"
         Icons.Filled.Verified -> "checkmark.seal.fill"
         Icons.Filled.Star -> "star.fill"
-        Icons.Filled.WorkspacePremium -> "crown.fill"
+        Icons.Filled.EmojiEvents -> "crown.fill"
         Icons.Filled.LocalHospital -> "cross.fill"
+        Icons.Filled.Eco -> "leaf.fill"
         Icons.Filled.Favorite -> "heart.fill"
         Icons.Filled.Flag -> "flag.fill"
-        Icons.Filled.EmojiEvents -> "trophy.fill"
+        Icons.Filled.Notifications -> "bell.fill"
+        Icons.AutoMirrored.Filled.EventNote -> "calendar.badge.exclamationmark"
+        Icons.AutoMirrored.Filled.VolumeUp -> "speaker.wave.3.fill"
         Icons.AutoMirrored.Filled.DirectionsRun -> "figure.run"
+        Icons.Filled.Pets -> "hare.fill"
+        Icons.Filled.LightMode -> "sun.max.fill"
 
         else -> "bubble.left.and.bubble.right.fill"
     }
@@ -146,24 +124,30 @@ fun mapStringToIcon(iosIconName: String): ImageVector {
         // Elements, Effects & Objects
         "hands.sparkles.fill" -> Icons.Filled.CleanHands
         "flame.fill" -> Icons.Filled.Whatshot
+        "fire.fill" -> Icons.Filled.Whatshot
         "drop.fill" -> Icons.Filled.WaterDrop
         "bolt.fill" -> Icons.Filled.Bolt
         "sparkles" -> Icons.Filled.AutoAwesome
         "book.closed.fill" -> Icons.Filled.Book
+        "sun.max.fill" -> Icons.Filled.LightMode
 
         // Badges, Status & Action
         "shield.fill" -> Icons.Filled.Shield
         "checkmark.seal.fill" -> Icons.Filled.Verified
         "star.fill" -> Icons.Filled.Star
-        "crown.fill" -> Icons.Filled.WorkspacePremium
+        "crown.fill" -> Icons.Filled.EmojiEvents
         "cross.fill" -> Icons.Filled.LocalHospital
         "heart.fill" -> Icons.Filled.Favorite
         "flag.fill" -> Icons.Filled.Flag
+        "bell.fill" -> Icons.Filled.Notifications
+        "calendar.badge.exclamationmark" -> Icons.AutoMirrored.Filled.EventNote
+        "speaker.wave.3.fill" -> Icons.AutoMirrored.Filled.VolumeUp
         "trophy.fill" -> Icons.Filled.EmojiEvents
         "figure.run" -> Icons.AutoMirrored.Filled.DirectionsRun
+        "hare.fill" -> Icons.Filled.Pets
+        "leaf.fill" -> Icons.Filled.Eco
 
         // Fallback for unrecognized strings
-        else -> Icons.AutoMirrored.Filled.Help
+        else -> Icons.Filled.Forum
     }
 }
-

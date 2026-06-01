@@ -53,15 +53,16 @@ fun VideoPlayer(
 
     LaunchedEffect(isPlaying) {
         exoPlayer.playWhenReady = isPlaying
-    }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            if (exoPlayer.duration > 0) {
-                val progress = exoPlayer.currentPosition.toFloat() / exoPlayer.duration.toFloat()
-                onProgressUpdate(progress, exoPlayer.currentPosition, exoPlayer.duration)
+        
+        // Progress loop only runs when playing to save CPU
+        if (isPlaying) {
+            while (true) {
+                if (exoPlayer.duration > 0) {
+                    val progress = exoPlayer.currentPosition.toFloat() / exoPlayer.duration.toFloat()
+                    onProgressUpdate(progress, exoPlayer.currentPosition, exoPlayer.duration)
+                }
+                delay(200)
             }
-            delay(200)
         }
     }
 

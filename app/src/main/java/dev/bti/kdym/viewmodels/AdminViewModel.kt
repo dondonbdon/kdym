@@ -6,29 +6,34 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dev.bti.kdym.data.models.*
-import dev.bti.kdym.data.repositories.RepositoryProvider
+import dev.bti.kdym.data.repositories.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 /**
  * ViewModel for administrative operations.
  * Provides streams for system-wide data (users, tribes, groups) and methods for
  * managing configurations, approvals, and tribe scores.
  */
+@HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
-class AdminViewModel : ViewModel() {
-
-    private val appConfigRepository = RepositoryProvider.appConfigRepository
-    private val userRepository = RepositoryProvider.userRepository
-    private val tribeRepository = RepositoryProvider.tribeRepository
-    private val feedRepository = RepositoryProvider.feedRepository
-    private val announcementRepository = RepositoryProvider.announcementRepository
-    private val groupRepository = RepositoryProvider.groupRepository
-    private val churchRepository = RepositoryProvider.churchRepository
-    private val eventRepository = RepositoryProvider.eventRepository
-    private val authRepository = RepositoryProvider.authRepository
+class AdminViewModel @Inject constructor(
+    private val appConfigRepository: AppConfigRepository,
+    private val userRepository: UserRepository,
+    private val tribeRepository: TribeRepository,
+    private val feedRepository: FeedRepository,
+    private val announcementRepository: AnnouncementRepository,
+    private val groupRepository: GroupRepository,
+    private val churchRepository: ChurchRepository,
+    private val eventRepository: EventRepository,
+    authRepository: AuthRepository,
+    private val globalOverlayRepository: GlobalOverlayRepository
+) : ViewModel() {
 
     // --- STATE STREAMS ---
 
@@ -214,6 +219,57 @@ class AdminViewModel : ViewModel() {
                 createdAt = Timestamp.now()
             )
         )
+    }
+
+    /** Creates a new home feed post. */
+    fun createHomePost(
+        title: String,
+        body: String,
+        audience: String,
+        priority: String,
+        linkTitle: String? = null,
+        linkURL: String? = null,
+        targetTribeId: String? = null,
+        targetGroupId: String? = null
+    ) = viewModelScope.launch {
+        try {
+            val campId = appConfig.value?.activeCampId ?: "camp_2026"
+            val uid = appUser.value?.uid
+            val name = appUser.value?.displayName ?: "Admin"
+
+            val post = FeedPost(
+                title = title,
+                body = body,
+                audience = when (audience) {
+                    "Campers" -> FeedPostAudience.campers
+                    "Leaders" -> FeedPostAudience.leaders
+                    "Admins" -> FeedPostAudience.admins
+                    "Specific Tribe" -> FeedPostAudience.tribe
+                    "Specific Group" -> FeedPostAudience.group
+                    else -> FeedPostAudience.everyone
+                },
+                priority = when (priority) {
+                    "Important" -> FeedPostPriority.important
+                    "Urgent" -> FeedPostPriority.urgent
+                    "Schedule" -> FeedPostPriority.schedule
+                    "Link" -> FeedPostPriority.link
+                    "Vote" -> FeedPostPriority.vote
+                    else -> FeedPostPriority.normal
+                },
+                linkTitle = linkTitle.takeIf { it?.isNotBlank() == true },
+                linkURL = linkURL.takeIf { it?.isNotBlank() == true },
+                targetTribeId = targetTribeId,
+                targetGroupId = targetGroupId,
+                campId = campId,
+                createdBy = uid,
+                createdByName = name,
+                createdAt = Timestamp.now()
+            )
+
+            feedRepository.createPost(post)
+        } catch (e: Exception) {
+            Log.e("AdminViewModel", "createHomePost failed", e)
+        }
     }
 
     /** Sends a new system announcement. */
@@ -406,6 +462,14 @@ class AdminViewModel : ViewModel() {
             eventRepository.deleteEvent(eventId)
         } catch (e: Exception) {
             Log.e("AdminViewModel", "deleteEvent failed", e)
+        }
+    }
+
+    fun updateGlobalOverlay(overlay: GlobalOverlay) = viewModelScope.launch {
+        try {
+            globalOverlayRepository.updateGlobalOverlay(overlay)
+        } catch (e: Exception) {
+            Log.e("AdminViewModel", "updateGlobalOverlay failed", e)
         }
     }
 

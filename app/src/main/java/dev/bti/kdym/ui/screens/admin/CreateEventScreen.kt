@@ -32,6 +32,7 @@ import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.platform.LocalLocale
 
 @Composable
 fun CreateEventScreen(
@@ -70,13 +71,13 @@ fun CreateEventScreen(
         )
     }
     
-    var isCampEvent by remember(existingEvent) { mutableStateOf<Boolean>(existingEvent?.isCampEvent ?: false) }
-    var isPublished by remember(existingEvent) { mutableStateOf<Boolean>(existingEvent?.isPublished ?: true) }
+    var isCampEvent by remember(existingEvent) { mutableStateOf(existingEvent?.isCampEvent ?: false) }
+    var isPublished by remember(existingEvent) { mutableStateOf(existingEvent?.isPublished ?: true) }
 
     var showCategoryPicker by remember { mutableStateOf(false) }
 
-    val dateFormatter = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-    val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+    val dateFormatter = SimpleDateFormat("MMM d, yyyy", LocalLocale.current.platformLocale)
+    val timeFormatter = SimpleDateFormat("h:mm a", LocalLocale.current.platformLocale)
 
     OutpourBackground {
         Column(
@@ -349,23 +350,3 @@ fun DateTimeRow(
     }
 }
 
-@Composable
-fun ToggleRow(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = title, color = Color.White, fontSize = 16.sp, fontFamily = QuickSandFontFamily)
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF22D3EE),
-                uncheckedThumbColor = Color.White.copy(0.6f),
-                uncheckedTrackColor = Color.White.copy(0.1f)
-            )
-        )
-    }
-}

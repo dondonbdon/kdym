@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import dev.bti.kdym.R
 import dev.bti.kdym.data.models.PlayItem
@@ -36,7 +37,7 @@ import dev.bti.kdym.viewmodels.MainViewModel
 fun PlayScreen(
     onNavigateToCreatePlayItem: () -> Unit,
     onNavigateToClips: (String) -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     var selectedSegment by remember { mutableStateOf("VIDEOS") }
     val appConfig by viewModel.appConfig.collectAsState()

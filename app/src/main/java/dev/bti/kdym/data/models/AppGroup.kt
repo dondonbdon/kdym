@@ -1,8 +1,13 @@
+@file:UseSerializers(TimestampSerializer::class)
+
 package dev.bti.kdym.data.models
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.PropertyName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
+import dev.bti.kdym.data.local.serializers.TimestampSerializer
 
 /**
  * Represents a community group or team within the app.
@@ -32,6 +37,7 @@ import com.google.firebase.firestore.PropertyName
  * @property updatedAt Last modification timestamp.
  */
 @IgnoreExtraProperties
+@Serializable
 data class AppGroup(
     val id: String = "",
     val name: String = "",
@@ -90,7 +96,24 @@ data class AppGroup(
         if (user.hasCommandAccess) return true
         if (!chatEnabled) return false
         if (leaderIds.contains(user.uid)) return true
+
+        val isImplicitTribeMember = (type == AppGroupType.tribe && user.tribeId == tribeId && tribeId != null)
+
         if (postingRestrictedToLeaders) return false
-        return memberIds.contains(user.uid) || isPublic
+        return memberIds.contains(user.uid) || isPublic || isImplicitTribeMember
     }
+
+    /**
+     * Helper to check general membership (useful for UI checks)
+     */
+    fun isMember(user: AppUser?): Boolean {
+        if (user == null) return false
+        return memberIds.contains(user.uid) ||
+                leaderIds.contains(user.uid) ||
+                (type == AppGroupType.tribe && user.tribeId == tribeId && tribeId != null)
+    }
+    /**
+     * Business logic to determine if a specific user is allowed to post in this group.
+     */
+
 }

@@ -39,6 +39,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dev.bti.kdym.data.models.AppGroup
 import dev.bti.kdym.data.models.AppGroupType
 import dev.bti.kdym.data.models.AppUser
+import dev.bti.kdym.data.models.UserRole
 import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.MappedIcon
 import dev.bti.kdym.ui.components.OutpourBackground
@@ -56,6 +57,7 @@ import kotlinx.coroutines.launch
 fun GroupInfoScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
+    onNavigateToProfile: (String) -> Unit,
     groupsViewModel: GroupsViewModel,
     mainViewModel: MainViewModel,
     adminViewModel: AdminViewModel
@@ -65,15 +67,25 @@ fun GroupInfoScreen(
     val user by mainViewModel.user.collectAsState()
     val allUsers by adminViewModel.allUsers.collectAsState()
 
-    val isLeader = remember(group, user) { group?.leaderIds?.contains(user?.uid) == true || user?.hasCommandAccess == true }
+    val isLeader = remember(
+        group,
+        user
+    ) { group?.leaderIds?.contains(user?.uid) == true || user?.hasCommandAccess == true }
 
     var draftGroup by remember(group) { mutableStateOf(group) }
     var selectedTab by remember { mutableStateOf("INFO") }
     val scrollState = rememberScrollState()
 
     OutpourBackground {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Button(
                     onClick = onNavigateBack,
                     colors = ButtonDefaults.buttonColors(
@@ -83,35 +95,62 @@ fun GroupInfoScreen(
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "BACK", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
 
-            Column(modifier = Modifier.weight(1f).verticalScroll(scrollState)) {
+            Column(modifier = Modifier
+                .weight(1f)
+                .verticalScroll(scrollState)) {
                 GroupInfoHeader(group = draftGroup)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // iOS Animated Pill Tabs
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    InfoTabButton(icon = Icons.Default.Info, isSelected = selectedTab == "INFO") { selectedTab = "INFO" }
+                    InfoTabButton(
+                        icon = Icons.Default.Info,
+                        isSelected = selectedTab == "INFO"
+                    ) { selectedTab = "INFO" }
                     Spacer(modifier = Modifier.width(8.dp))
-                    InfoTabButton(icon = Icons.Default.Groups, isSelected = selectedTab == "MEMBERS") { selectedTab = "MEMBERS" }
+                    InfoTabButton(
+                        icon = Icons.Default.Groups,
+                        isSelected = selectedTab == "MEMBERS"
+                    ) { selectedTab = "MEMBERS" }
                     Spacer(modifier = Modifier.width(8.dp))
                     if (isLeader) {
-                        InfoTabButton(icon = Icons.Default.Tune, isSelected = selectedTab == "SETTINGS") { selectedTab = "SETTINGS" }
+                        InfoTabButton(
+                            icon = Icons.Default.Tune,
+                            isSelected = selectedTab == "SETTINGS"
+                        ) { selectedTab = "SETTINGS" }
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    InfoTabButton(icon = Icons.Default.Image, isSelected = selectedTab == "MEDIA") { selectedTab = "MEDIA" }
+                    InfoTabButton(
+                        icon = Icons.Default.Image,
+                        isSelected = selectedTab == "MEDIA"
+                    ) { selectedTab = "MEDIA" }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)) {
                     when (selectedTab) {
                         "INFO" -> GroupInfoTab(group = draftGroup, onUpdate = { draftGroup = it })
                         "MEMBERS" -> GroupMembersTab(
@@ -119,25 +158,45 @@ fun GroupInfoScreen(
                             allUsers = allUsers,
                             isLeader = isLeader,
                             adminViewModel = adminViewModel,
-                            onUpdate = { draftGroup = it }
+                            onUpdate = { draftGroup = it },
+                            onNavigateToProfile = onNavigateToProfile
                         )
-                        "SETTINGS" -> GroupSettingsTab(group = draftGroup, isLeader = isLeader, onUpdate = { draftGroup = it })
-                        "MEDIA" -> GroupMediaTab(group = draftGroup, groupsViewModel = groupsViewModel)
+
+                        "SETTINGS" -> GroupSettingsTab(
+                            group = draftGroup,
+                            isLeader = isLeader,
+                            onUpdate = { draftGroup = it })
+
+                        "MEDIA" -> GroupMediaTab(
+                            group = draftGroup,
+                            groupsViewModel = groupsViewModel
+                        )
                     }
                 }
             }
 
             if (isLeader && selectedTab != "MEDIA" && selectedTab != "MEMBERS") {
-                Box(modifier = Modifier.padding(16.dp).navigationBarsPadding()) {
+                Box(modifier = Modifier
+                    .padding(16.dp)
+                    .navigationBarsPadding()) {
                     Button(
                         onClick = { draftGroup?.let { adminViewModel.updateGroup(it) } },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
                         shape = CircleShape
                     ) {
                         Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "SAVE GROUP", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                        Text(
+                            text = "SAVE GROUP",
+                            fontWeight = FontWeight.Black,
+                            fontFamily = QuickSandFontFamily
+                        )
                     }
                 }
             }
@@ -157,21 +216,45 @@ fun GroupInfoAndPermsScreen(
     val scrollState = rememberScrollState()
 
     OutpourBackground {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Button(
                     onClick = onNavigateBack,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(0.1f), contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.1f),
+                        contentColor = Color.White
+                    ),
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "BACK", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
 
-            Column(modifier = Modifier.weight(1f).verticalScroll(scrollState).padding(bottom = 24.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(scrollState)
+                    .padding(bottom = 24.dp)
+            ) {
                 Text(
                     text = "INFO & PERMS",
                     color = Color.White,
@@ -183,19 +266,33 @@ fun GroupInfoAndPermsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 GroupInfoTab(group = draftGroup, onUpdate = { draftGroup = it })
                 Spacer(modifier = Modifier.height(24.dp))
-                GroupSettingsTab(group = draftGroup, isLeader = true, onUpdate = { draftGroup = it })
+                GroupSettingsTab(
+                    group = draftGroup,
+                    isLeader = true,
+                    onUpdate = { draftGroup = it })
             }
 
-            Box(modifier = Modifier.padding(16.dp).navigationBarsPadding()) {
+            Box(modifier = Modifier
+                .padding(16.dp)
+                .navigationBarsPadding()) {
                 Button(
                     onClick = { draftGroup?.let { adminViewModel.updateGroup(it); onNavigateBack() } },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
                     shape = CircleShape
                 ) {
                     Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "SAVE CHANGES", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "SAVE CHANGES",
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
         }
@@ -215,21 +312,45 @@ fun GroupMembersAndLeadersScreen(
     val scrollState = rememberScrollState()
 
     OutpourBackground {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Button(
                     onClick = onNavigateBack,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(0.1f), contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.1f),
+                        contentColor = Color.White
+                    ),
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "BACK", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
 
-            Column(modifier = Modifier.weight(1f).verticalScroll(scrollState).padding(bottom = 24.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(scrollState)
+                    .padding(bottom = 24.dp)
+            ) {
                 Text(
                     text = "MEMBERS",
                     color = Color.White,
@@ -248,16 +369,27 @@ fun GroupMembersAndLeadersScreen(
                 )
             }
 
-            Box(modifier = Modifier.padding(16.dp).navigationBarsPadding()) {
+            Box(modifier = Modifier
+                .padding(16.dp)
+                .navigationBarsPadding()) {
                 Button(
                     onClick = { draftGroup?.let { adminViewModel.updateGroup(it); onNavigateBack() } },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
                     shape = CircleShape
                 ) {
                     Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "SAVE CHANGES", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "SAVE CHANGES",
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
             }
         }
@@ -317,10 +449,16 @@ fun GroupInfoHeader(group: AppGroup?) {
 
 @Composable
 fun InfoTabButton(icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
-    val width by animateDpAsState(targetValue = if (isSelected) 80.dp else 48.dp, label = "tab_width")
+    val width by animateDpAsState(
+        targetValue = if (isSelected) 80.dp else 48.dp,
+        label = "tab_width"
+    )
 
     Surface(
-        modifier = Modifier.width(width).height(48.dp).clickable { onClick() },
+        modifier = Modifier
+            .width(width)
+            .height(48.dp)
+            .clickable { onClick() },
         color = if (isSelected) Color.White else Color.White.copy(0.05f),
         shape = CircleShape
     ) {
@@ -343,15 +481,35 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
 
     val accentColor = group?.colorHex?.toColor() ?: Color(0xFFEF4444)
 
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                Icon(
+                    Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(16.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Group Identity", color = Color(0xFFEF4444), fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                Text(
+                    text = "Group Identity",
+                    color = Color(0xFFEF4444),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = QuickSandFontFamily
+                )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = Color.White.copy(0.02f), borderColor = Color.White.copy(0.05f)) {
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = Color.White.copy(0.02f),
+                borderColor = Color.White.copy(0.05f)
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     StyledTextField(
                         value = group?.name ?: "",
@@ -384,7 +542,10 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
         )
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -393,14 +554,23 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
                         contentAlignment = Alignment.Center
                     ) {
                         if (group?.iconName != null) {
-                            MappedIcon(iosName = group.iconName, tint = Color.White, modifier = Modifier.size(24.dp))
+                            MappedIcon(
+                                iosName = group.iconName,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
                         } else {
                             Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White)
                         }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
-                        Text(text = "Current look", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            text = "Current look",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                         Text(text = group?.name ?: "Group", color = TextSecondary, fontSize = 12.sp)
                     }
                 }
@@ -420,23 +590,57 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Shield, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.Shield,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(text = "Choose Icon", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(text = "Open the icon library", color = TextSecondary, fontSize = 11.sp)
+                                Text(
+                                    text = "Choose Icon",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "Open the icon library",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
+                                )
                             }
                         }
-                        Icon(imageVector = if (showIconPicker) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null, tint = TextSecondary)
+                        Icon(
+                            imageVector = if (showIconPicker) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = TextSecondary
+                        )
                     }
                 }
 
                 if (showIconPicker) {
                     val icons = listOf(
-                        "bubble.left.and.bubble.right.fill", "person.3.fill", "megaphone.fill", "building.2.fill",
-                        "paintbrush.pointed.fill", "camera.fill", "photo.stack.fill", "video.fill", "music.mic",
-                        "flame.fill", "drop.fill", "bolt.fill", "sparkles", "book.closed.fill", "shield.fill",
-                        "star.fill", "crown.fill", "heart.fill", "flag.fill", "trophy.fill"
+                        "bubble.left.and.bubble.right.fill",
+                        "person.3.fill",
+                        "megaphone.fill",
+                        "building.2.fill",
+                        "paintbrush.pointed.fill",
+                        "camera.fill",
+                        "photo.stack.fill",
+                        "video.fill",
+                        "music.mic",
+                        "flame.fill",
+                        "drop.fill",
+                        "bolt.fill",
+                        "sparkles",
+                        "book.closed.fill",
+                        "shield.fill",
+                        "star.fill",
+                        "crown.fill",
+                        "heart.fill",
+                        "flag.fill",
+                        "trophy.fill"
                     )
 
                     LazyVerticalGrid(
@@ -450,12 +654,24 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
                             Box(
                                 modifier = Modifier
                                     .aspectRatio(1f)
-                                    .background(if (group?.iconName == iconName) accentColor.copy(0.2f) else Color.White.copy(0.05f), CircleShape)
-                                    .border(if (group?.iconName == iconName) 2.dp else 0.dp, accentColor, CircleShape)
+                                    .background(
+                                        if (group?.iconName == iconName) accentColor.copy(
+                                            0.2f
+                                        ) else Color.White.copy(0.05f), CircleShape
+                                    )
+                                    .border(
+                                        if (group?.iconName == iconName) 2.dp else 0.dp,
+                                        accentColor,
+                                        CircleShape
+                                    )
                                     .clickable { onUpdate(group!!.copy(iconName = iconName)) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                MappedIcon(iosName = iconName, tint = if (group?.iconName == iconName) accentColor else Color.White, modifier = Modifier.size(20.dp))
+                                MappedIcon(
+                                    iosName = iconName,
+                                    tint = if (group?.iconName == iconName) accentColor else Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                     }
@@ -474,14 +690,32 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Palette, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.Palette,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(text = "Choose Color", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(text = "This controls the glow and accent color", color = TextSecondary, fontSize = 11.sp)
+                                Text(
+                                    text = "Choose Color",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "This controls the glow and accent color",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
+                                )
                             }
                         }
-                        Icon(imageVector = if (showColorPicker) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null, tint = TextSecondary)
+                        Icon(
+                            imageVector = if (showColorPicker) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = TextSecondary
+                        )
                     }
                 }
 
@@ -498,7 +732,11 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
                                 modifier = Modifier
                                     .aspectRatio(1f)
                                     .background(hex.toColor(), CircleShape)
-                                    .border(if (group?.colorHex == hex) 3.dp else 0.dp, Color.White, CircleShape)
+                                    .border(
+                                        if (group?.colorHex == hex) 3.dp else 0.dp,
+                                        Color.White,
+                                        CircleShape
+                                    )
                                     .clickable { onUpdate(group!!.copy(colorHex = hex)) }
                             )
                         }
@@ -508,37 +746,23 @@ fun GroupInfoTab(group: AppGroup?, onUpdate: (AppGroup) -> Unit) {
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 BottomInfoRow(label = "MEMBERS", value = "${group?.memberCount ?: 0}")
                 BottomInfoRow(label = "LEADERS", value = "${group?.leaderIds?.size ?: 0}")
                 BottomInfoRow(label = "GROUP TYPE", value = group?.type?.title ?: "General")
-                if  (!isTribe) {
-                    BottomInfoRow(label = "ACCESS", value = if (group?.isPublic == true) "Public" else "Private")
-                    BottomInfoRow(label = "OFFICIAL", value = if (group?.isOfficial == true) "Yes" else "No")
+                if (!isTribe) {
+                    BottomInfoRow(
+                        label = "ACCESS",
+                        value = if (group?.isPublic == true) "Public" else "Private"
+                    )
+                    BottomInfoRow(
+                        label = "OFFICIAL",
+                        value = if (group?.isOfficial == true) "Yes" else "No"
+                    )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun AvatarRow(
-    icons: List<Pair<String, ImageVector>>,
-    selectedIconName: String?,
-    enabled: Boolean,
-    onSelect: (String) -> Unit
-) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        icons.forEach { (name, icon) ->
-            val isSelected = selectedIconName == name
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(if (isSelected) Color(0xFFEF4444) else Color.White.copy(0.05f), CircleShape)
-                    .clickable(enabled = enabled) { onSelect(name) },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -547,8 +771,21 @@ fun AvatarRow(
 @Composable
 fun BottomInfoRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = label, color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily, letterSpacing = 1.sp)
-        Text(text = value, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            fontFamily = QuickSandFontFamily,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = QuickSandFontFamily
+        )
     }
 }
 
@@ -558,29 +795,43 @@ fun GroupMembersTab(
     allUsers: List<AppUser>,
     isLeader: Boolean,
     adminViewModel: AdminViewModel,
-    onUpdate: (AppGroup) -> Unit
+    onUpdate: (AppGroup) -> Unit,
+    onNavigateToProfile: (String) -> Unit = {}
 ) {
     val isTribe = group?.type == AppGroupType.tribe
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val isSystemAdmin = allUsers.find { it.uid == currentUserId }?.roleEnum?.ordinal!! >= UserRole.groupLeader.ordinal
+
     var showUserPicker by remember { mutableStateOf(false) }
     var selectedUserIds by remember { mutableStateOf(setOf<String>()) }
     var isManageMode by remember { mutableStateOf(false) }
     var showConfirmRemove by remember { mutableStateOf(false) }
 
-    val joinRequests by adminViewModel.getJoinRequestsForGroup(group?.id ?: "").collectAsState(initial = emptyList())
+    val joinRequests by adminViewModel.getJoinRequestsForGroup(group?.id ?: "")
+        .collectAsState(initial = emptyList())
     var selectedSubTab by remember { mutableStateOf("MEMBERS") }
     val coroutineScope = rememberCoroutineScope()
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // REQUESTS SUB-TABS (Only visible to leaders if there are requests)
         if (isLeader && joinRequests.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MemberSubTabButton(label = "MEMBERS", isSelected = selectedSubTab == "MEMBERS") { selectedSubTab = "MEMBERS" }
-                MemberSubTabButton(label = "REQUESTS (${joinRequests.size})", isSelected = selectedSubTab == "REQUESTS") { selectedSubTab = "REQUESTS" }
+                MemberSubTabButton(
+                    label = "MEMBERS",
+                    isSelected = selectedSubTab == "MEMBERS"
+                ) { selectedSubTab = "MEMBERS" }
+                MemberSubTabButton(
+                    label = "REQUESTS (${joinRequests.size})",
+                    isSelected = selectedSubTab == "REQUESTS"
+                ) { selectedSubTab = "REQUESTS" }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -588,43 +839,99 @@ fun GroupMembersTab(
         if (selectedSubTab == "REQUESTS" && isLeader) {
             joinRequests.forEach { request ->
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(40.dp).background(Color.White.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                            Text(text = request.requesterName.take(1), color = Color.White, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color.White.copy(0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = request.requesterName.take(1),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = request.requesterName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text(text = request.requesterEmail, color = TextSecondary, fontSize = 12.sp)
+                            Text(
+                                text = request.requesterName,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = request.requesterEmail,
+                                color = TextSecondary,
+                                fontSize = 12.sp
+                            )
                         }
-                        Row {
-                            IconButton(onClick = {
-                                coroutineScope.launch {
-                                    val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                                    adminViewModel.updateJoinRequestStatus(request.id, "approved", currentUid)
-                                    group?.let { g -> onUpdate(g.copy(memberIds = (g.memberIds + request.requesterId).distinct())) }
-                                }
-                            }) {
-                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Approve", tint = Color(0xFF10B981))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            IconButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        adminViewModel.updateJoinRequestStatus(
+                                            request.id,
+                                            "approved",
+                                            currentUserId
+                                        )
+                                        group?.let { g -> onUpdate(g.copy(memberIds = (g.memberIds + request.requesterId).distinct())) }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .background(
+                                        Color(0xFF10B981).copy(0.1f),
+                                        CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Approve",
+                                    tint = Color(0xFF10B981),
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
-                            IconButton(onClick = {
-                                coroutineScope.launch {
-                                    val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                                    adminViewModel.updateJoinRequestStatus(request.id, "rejected", currentUid)
-                                }
-                            }) {
-                                Icon(imageVector = Icons.Default.Close, contentDescription = "Reject", tint = Color(0xFFEF4444))
+                            IconButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        adminViewModel.updateJoinRequestStatus(
+                                            request.id,
+                                            "rejected",
+                                            currentUserId
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .background(
+                                        Color(0xFFEF4444).copy(0.1f),
+                                        CircleShape
+                                    )
+                                    .size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Reject",
+                                    tint = Color(0xFFEF4444),
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                     }
                 }
             }
         } else {
-            // MEMBERS View (Original logic but with X for removal)
+            // MEMBERS VIEW
             if (showUserPicker) {
                 UserSelectionDialog(
                     title = "ADD MEMBERS",
-                    users = allUsers.filter { it.uid !in (group?.memberIds ?: emptyList()) && it.uid !in (group?.leaderIds ?: emptyList()) },
+                    users = allUsers.filter {
+                        it.uid !in (group?.memberIds ?: emptyList()) && it.uid !in (group?.leaderIds
+                            ?: emptyList())
+                    },
                     selectedUserIds = emptySet(),
                     multiSelect = true,
                     onDismiss = { showUserPicker = false },
@@ -638,15 +945,28 @@ fun GroupMembersTab(
             if (showConfirmRemove) {
                 AlertDialog(
                     onDismissRequest = { showConfirmRemove = false },
-                    title = { Text("Remove Members?", color = Color.White) },
-                    text = { Text("Are you sure you want to remove ${selectedUserIds.size} members from the group?", color = Color.White.copy(0.7f)) },
+                    title = {
+                        Text(
+                            "Remove Members?",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    text = {
+                        Text(
+                            "Are you sure you want to remove ${selectedUserIds.size} members from the group?",
+                            color = Color.White.copy(0.7f)
+                        )
+                    },
                     confirmButton = {
                         TextButton(onClick = {
                             group?.let { g ->
-                                onUpdate(g.copy(
+                                val updatedGroup = g.copy(
                                     memberIds = g.memberIds - selectedUserIds,
                                     leaderIds = g.leaderIds - selectedUserIds
-                                ))
+                                )
+                                onUpdate(updatedGroup)
+                                adminViewModel.updateGroup(updatedGroup)
                             }
                             selectedUserIds = emptySet()
                             isManageMode = false
@@ -679,16 +999,24 @@ fun GroupMembersTab(
                     fontFamily = QuickSandFontFamily
                 )
 
-                Row {
-                    if (isLeader) {
+                if (isLeader && (!isTribe || isSystemAdmin)) {
+                    Row {
                         IconButton(onClick = { showUserPicker = true }) {
-                            Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, tint = Color.White)
+                            Icon(
+                                imageVector = Icons.Default.PersonAdd,
+                                contentDescription = "Add",
+                                tint = Color.White
+                            )
                         }
                         IconButton(onClick = {
                             isManageMode = !isManageMode
                             if (!isManageMode) selectedUserIds = emptySet()
                         }) {
-                            Icon(imageVector = if (isManageMode) Icons.Default.Close else Icons.Default.Edit, contentDescription = null, tint = Color(0xFF22D3EE))
+                            Icon(
+                                imageVector = if (isManageMode) Icons.Default.Close else Icons.Default.Edit,
+                                contentDescription = "Manage",
+                                tint = if (isManageMode) Color.White else Color(0xFF22D3EE)
+                            )
                         }
                     }
                 }
@@ -697,10 +1025,20 @@ fun GroupMembersTab(
             if (isManageMode && selectedUserIds.isNotEmpty()) {
                 Button(
                     onClick = { showConfirmRemove = true },
-                    modifier = Modifier.fillMaxWidth().height(48.dp).padding(vertical = 8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444).copy(0.1f), contentColor = Color(0xFFEF4444)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .padding(vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFEF4444).copy(
+                            0.1f
+                        ), contentColor = Color(0xFFEF4444)
+                    ),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEF4444).copy(0.3f))
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFFEF4444).copy(0.3f)
+                    )
                 ) {
                     Text("REMOVE SELECTED (${selectedUserIds.size})", fontWeight = FontWeight.Black)
                 }
@@ -712,19 +1050,31 @@ fun GroupMembersTab(
             }
 
             members.forEach { user ->
+                val isCurrentUser = user.uid == currentUserId
                 val isUserLeader = group?.leaderIds?.contains(user.uid) == true
                 val isSelected = selectedUserIds.contains(user.uid)
-                val canRemove = !isTribe || allUsers.find { it.uid == FirebaseAuth.getInstance().currentUser?.uid }?.isAdmin == true
+
+                val canRemove = (!isTribe || isSystemAdmin) && !isCurrentUser
 
                 GlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
-                        .clickable(enabled = isManageMode && canRemove) {
-                            selectedUserIds = if (isSelected) selectedUserIds - user.uid else selectedUserIds + user.uid
+                        .clickable {
+                            if (isManageMode && canRemove) {
+                                selectedUserIds =
+                                    if (isSelected) selectedUserIds - user.uid else selectedUserIds + user.uid
+                            } else if (!isManageMode) {
+                                onNavigateToProfile(user.uid)
+                            }
                         },
                     cornerRadius = 16.dp,
-                    backgroundColor = if (isSelected) Color(0xFF22D3EE).copy(0.1f) else Color.White.copy(0.02f)
+                    backgroundColor = if (isSelected) Color(0xFF22D3EE).copy(0.1f) else Color.White.copy(
+                        0.02f
+                    ),
+                    borderColor = if (isSelected) Color(0xFF22D3EE).copy(0.3f) else Color.White.copy(
+                        0.05f
+                    )
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
@@ -734,67 +1084,185 @@ fun GroupMembersTab(
                             Checkbox(
                                 checked = isSelected,
                                 onCheckedChange = {
-                                    selectedUserIds = if (it) selectedUserIds + user.uid else selectedUserIds - user.uid
+                                    selectedUserIds =
+                                        if (it) selectedUserIds + user.uid else selectedUserIds - user.uid
                                 },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF22D3EE), uncheckedColor = Color.White.copy(0.3f))
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFF22D3EE),
+                                    uncheckedColor = Color.White.copy(0.3f)
+                                )
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }
 
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
-                                .background(Color.White.copy(0.1f), CircleShape),
+                                .size(48.dp)
+                                .background(Color.White.copy(0.08f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = user.initials, color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            Text(
+                                text = user.initials,
+                                color = Color.White,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 16.sp
+                            )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
+
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = QuickSandFontFamily)
-                            Text(text = if (isUserLeader) "Leader" else "Member", color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                            Text(
+                                text = if (isCurrentUser) "${user.displayName} (You)" else user.displayName,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                fontFamily = QuickSandFontFamily
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Surface(
+                                color = if (isUserLeader) Color(0xFFEAB308).copy(0.15f) else Color.White.copy(
+                                    0.05f
+                                ),
+                                shape = RoundedCornerShape(6.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (isUserLeader) Color(0xFFEAB308).copy(0.3f) else Color.White.copy(
+                                        0.1f
+                                    )
+                                )
+                            ) {
+                                Text(
+                                    text = if (isUserLeader) "LEADER" else "MEMBER",
+                                    color = if (isUserLeader) Color(0xFFEAB308) else TextSecondary,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
                         }
 
-                        if (!isManageMode && isLeader) {
+                        // ... inside GroupMembersTab, locating the Action Row ...
+
+                        if (!isManageMode && isLeader && (!isTribe || isSystemAdmin)) {
                             Row {
-                                if (FirebaseAuth.getInstance().currentUser?.uid != user.uid) {
+                                if (!isCurrentUser) {
                                     if (!isUserLeader) {
                                         IconButton(onClick = {
                                             group?.let { g ->
-                                                onUpdate(g.copy(
+                                                // 1. Create the new group state
+                                                val updatedGroup = g.copy(
                                                     memberIds = g.memberIds - user.uid,
                                                     leaderIds = (g.leaderIds + user.uid).distinct()
-                                                ))
+                                                )
+                                                // 2. Update local UI state
+                                                onUpdate(updatedGroup)
+                                                // 3. IMMEDIATELY update Firestore
+                                                adminViewModel.updateGroup(updatedGroup)
                                             }
                                         }) {
-                                            Icon(imageVector = Icons.Default.Shield, contentDescription = "Make Leader", tint = Color(0xFFEAB308))
+                                            Icon(
+                                                imageVector = Icons.Default.Shield,
+                                                contentDescription = "Make Leader",
+                                                tint = Color.White.copy(0.3f)
+                                            )
                                         }
                                     } else {
                                         IconButton(onClick = {
-                                            group.let { g ->
-                                                onUpdate(g.copy(
+                                            group?.let { g ->
+                                                // 1. Create the new group state
+                                                val updatedGroup = g.copy(
                                                     memberIds = (g.memberIds + user.uid).distinct(),
                                                     leaderIds = g.leaderIds - user.uid
-                                                ))
+                                                )
+                                                // 2. Update local UI state
+                                                onUpdate(updatedGroup)
+                                                // 3. IMMEDIATELY update Firestore
+                                                adminViewModel.updateGroup(updatedGroup)
                                             }
                                         }) {
-                                            Icon(imageVector = Icons.Default.Person, contentDescription = "Make Member", tint = Color(0xFF22D3EE))
+                                            Icon(
+                                                imageVector = Icons.Default.Person,
+                                                contentDescription = "Demote to Member",
+                                                tint = Color(0xFFEAB308)
+                                            )
                                         }
                                     }
                                 }
 
-                                if (!isUserLeader && canRemove) {
+                                if (canRemove) { // Hide X for current user & tribes
                                     IconButton(onClick = {
                                         selectedUserIds = setOf(user.uid)
                                         showConfirmRemove = true
                                     }) {
-                                        Icon(imageVector = Icons.Default.Close, contentDescription = "Remove", tint = Color(0xFFEF4444))
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Remove",
+                                            tint = Color(0xFFEF4444).copy(0.7f)
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+
+            // LEAVE GROUP LOGIC
+            val isCurrentUserLeader = group?.leaderIds?.contains(currentUserId) == true
+            val otherLeadersCount = group?.leaderIds?.count { it != currentUserId } ?: 0
+            val isMemberOfGroup = members.any { it.uid == currentUserId }
+
+            // Rules for leaving: Must be > 1 person. If leader, someone else must also be a leader.
+            val canLeaveGroup = members.size > 1 && (!isCurrentUserLeader || otherLeadersCount > 0)
+
+            if (isMemberOfGroup && canLeaveGroup && group?.type != AppGroupType.tribe) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        group?.let { g ->
+                            onUpdate(
+                                g.copy(
+                                    memberIds = g.memberIds - currentUserId,
+                                    leaderIds = g.leaderIds - currentUserId
+                                )
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(0.05f),
+                        contentColor = Color(0xFFEF4444)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "LEAVE GROUP",
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+            } else if (isMemberOfGroup && members.size > 1) {
+                // User wants to leave but is the only leader
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "You must promote another leader before you can leave.",
+                    color = Color(0xFFEAB308),
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                )
             }
         }
     }
@@ -803,13 +1271,24 @@ fun GroupMembersTab(
 @Composable
 fun MemberSubTabButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.height(36.dp).clickable { onClick() },
+        modifier = Modifier
+            .height(36.dp)
+            .clickable { onClick() },
         color = if (isSelected) Color.White.copy(0.15f) else Color.Transparent,
         shape = RoundedCornerShape(18.dp),
-        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.2f)) else null
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color.White.copy(0.2f)
+        ) else null
     ) {
         Box(modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-            Text(text = label, color = if (isSelected) Color.White else TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+            Text(
+                text = label,
+                color = if (isSelected) Color.White else TextSecondary,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = QuickSandFontFamily
+            )
         }
     }
 }
@@ -820,52 +1299,108 @@ fun GroupSettingsTab(group: AppGroup?, isLeader: Boolean, onUpdate: (AppGroup) -
     val canEdit = isLeader
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (!isTribe) {
-            PermissionToggle("Public Group", "Users can discover this group and request access.", group?.isPublic == true, canEdit) {
+            PermissionToggle(
+                "Public Group",
+                "Users can discover this group and request access.",
+                group?.isPublic == true,
+                canEdit
+            ) {
                 group?.let { g -> onUpdate(g.copy(isPublic = it)) }
             }
-            PermissionToggle("Official Group", "Marks this as an official KDYM channel.", group?.isOfficial == true, canEdit) {
+            PermissionToggle(
+                "Official Group",
+                "Marks this as an official KDYM channel.",
+                group?.isOfficial == true,
+                canEdit
+            ) {
                 group?.let { g -> onUpdate(g.copy(isOfficial = it)) }
             }
         }
-        PermissionToggle("Chat Enabled", "Allow messages inside this group.", group?.chatEnabled == true, canEdit) {
+        PermissionToggle(
+            "Chat Enabled",
+            "Allow messages inside this group.",
+            group?.chatEnabled == true,
+            canEdit
+        ) {
             group?.let { g -> onUpdate(g.copy(chatEnabled = it)) }
         }
-        PermissionToggle("Leaders Post Only", "Members can read, but only leaders and admins can post.", group?.postingRestrictedToLeaders == true, canEdit) {
+        PermissionToggle(
+            "Leaders Post Only",
+            "Members can read, but only leaders and admins can post.",
+            group?.postingRestrictedToLeaders == true,
+            canEdit
+        ) {
             group?.let { g -> onUpdate(g.copy(postingRestrictedToLeaders = it)) }
         }
-        PermissionToggle("Leaders Attach Only", "Only leaders and admins can attach photos and files.", group?.attachmentsRestrictedToLeaders == true, canEdit) {
+        PermissionToggle(
+            "Leaders Attach Only",
+            "Only leaders and admins can attach photos and files.",
+            group?.attachmentsRestrictedToLeaders == true,
+            canEdit
+        ) {
             group?.let { g -> onUpdate(g.copy(attachmentsRestrictedToLeaders = it)) }
         }
-        PermissionToggle("Leaders Poll Only", "Only leaders and admins can create polls.", group?.pollsRestrictedToLeaders == true, canEdit) {
+        PermissionToggle(
+            "Leaders Poll Only",
+            "Only leaders and admins can create polls.",
+            group?.pollsRestrictedToLeaders == true,
+            canEdit
+        ) {
             group?.let { g -> onUpdate(g.copy(pollsRestrictedToLeaders = it)) }
         }
     }
 }
 
 @Composable
-fun PermissionToggle(title: String, subtitle: String, enabled: Boolean, canEdit: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun PermissionToggle(
+    title: String,
+    subtitle: String,
+    enabled: Boolean,
+    canEdit: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(40.dp).background(Color.White.copy(0.05f), RoundedCornerShape(12.dp)),
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color.White.copy(0.05f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = if (title.contains("Public")) Icons.Default.Visibility else if (title.contains("Official")) Icons.Default.Verified else Icons.Default.Forum,
+                imageVector = if (title.contains("Public")) Icons.Default.Visibility else if (title.contains(
+                        "Official"
+                    )
+                ) Icons.Default.Verified else Icons.Default.Forum,
                 contentDescription = null,
                 tint = Color.White.copy(0.6f)
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
-            Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+            Text(
+                text = title,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = QuickSandFontFamily
+            )
+            Text(
+                text = subtitle,
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontFamily = QuickSandFontFamily
+            )
         }
         Switch(
             checked = enabled,
@@ -940,31 +1475,57 @@ fun GroupMediaTab(group: AppGroup?, groupsViewModel: GroupsViewModel) {
     var selectedFilter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Images", "Videos", "Docs", "Audio")
 
-    val media by groupsViewModel.getGroupMedia(group?.id ?: "").collectAsState(initial = emptyList())
+    val media by groupsViewModel.getGroupMedia(group?.id ?: "")
+        .collectAsState(initial = emptyList())
     var showFullScreenGallery by remember { mutableStateOf(false) }
     var initialMediaIndex by remember { mutableIntStateOf(0) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "GALLERY", color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, fontFamily = QuickSandFontFamily)
+                Text(
+                    text = "GALLERY",
+                    color = Color(0xFFEF4444),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 2.sp,
+                    fontFamily = QuickSandFontFamily
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Images, videos, documents, and audio shared inside this group.", color = TextSecondary, fontSize = 14.sp, fontFamily = QuickSandFontFamily)
+                Text(
+                    text = "Images, videos, documents, and audio shared inside this group.",
+                    color = TextSecondary,
+                    fontSize = 14.sp,
+                    fontFamily = QuickSandFontFamily
+                )
             }
 
-            IconButton(onClick = { if (media.isNotEmpty()) { initialMediaIndex = 0; showFullScreenGallery = true } }) {
-                Icon(imageVector = Icons.Default.OpenInFull, contentDescription = "Expand", tint = Color.White)
+            IconButton(onClick = {
+                if (media.isNotEmpty()) {
+                    initialMediaIndex = 0; showFullScreenGallery = true
+                }
+            }) {
+                Icon(
+                    imageVector = Icons.Default.OpenInFull,
+                    contentDescription = "Expand",
+                    tint = Color.White
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Horizontal filter bar
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             items(filters) { filter ->
                 val isSelected = selectedFilter == filter
                 Surface(
@@ -972,15 +1533,26 @@ fun GroupMediaTab(group: AppGroup?, groupsViewModel: GroupsViewModel) {
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.clickable { selectedFilter = filter }
                 ) {
-                    Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
-                            imageVector = when(filter) { "Images" -> Icons.Default.Image; "Videos" -> Icons.Default.PlayCircle; "Docs" -> Icons.Default.Description; else -> Icons.Default.GridView },
+                            imageVector = when (filter) {
+                                "Images" -> Icons.Default.Image; "Videos" -> Icons.Default.PlayCircle; "Docs" -> Icons.Default.Description; else -> Icons.Default.GridView
+                            },
                             contentDescription = null,
                             tint = if (isSelected) Color.Black else Color.White,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = filter, color = if (isSelected) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, fontFamily = QuickSandFontFamily)
+                        Text(
+                            text = filter,
+                            color = if (isSelected) Color.Black else Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
                     }
                 }
             }
@@ -989,7 +1561,13 @@ fun GroupMediaTab(group: AppGroup?, groupsViewModel: GroupsViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         if (media.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().height(300.dp).padding(16.dp), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text("No media shared in this group yet.", color = TextSecondary, fontSize = 14.sp)
             }
         } else {
@@ -1004,7 +1582,10 @@ fun GroupMediaTab(group: AppGroup?, groupsViewModel: GroupsViewModel) {
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxWidth().heightIn(max = 1000.dp).padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 1000.dp)
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
@@ -1019,7 +1600,11 @@ fun GroupMediaTab(group: AppGroup?, groupsViewModel: GroupsViewModel) {
                             .clickable { initialMediaIndex = index; showFullScreenGallery = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (attachment.type.name.contains("image", ignoreCase = true) || attachment.type.name.contains("video", ignoreCase = true)) {
+                        if (attachment.type.name.contains(
+                                "image",
+                                ignoreCase = true
+                            ) || attachment.type.name.contains("video", ignoreCase = true)
+                        ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(attachment.thumbnailURL ?: attachment.url)
@@ -1030,26 +1615,40 @@ fun GroupMediaTab(group: AppGroup?, groupsViewModel: GroupsViewModel) {
                                 contentScale = ContentScale.Crop
                             )
                             if (attachment.type.name.contains("video", ignoreCase = true)) {
-                                Icon(imageVector = Icons.Default.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                                Icon(
+                                    imageVector = Icons.Default.PlayCircle,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
                             }
                         } else {
                             // File / Audio Placeholder
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = attachment.fileName?.substringAfterLast(".")?.uppercase() ?: "FILE",
+                                    text = attachment.fileName?.substringAfterLast(".")?.uppercase()
+                                        ?: "FILE",
                                     color = Color(0xFF22D3EE),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Black,
                                     fontFamily = QuickSandFontFamily
                                 )
                                 Icon(
-                                    imageVector = if (attachment.type.name.contains("audio", ignoreCase = true)) Icons.Default.Audiotrack else Icons.Default.Description,
+                                    imageVector = if (attachment.type.name.contains(
+                                            "audio",
+                                            ignoreCase = true
+                                        )
+                                    ) Icons.Default.Audiotrack else Icons.Default.Description,
                                     contentDescription = null,
                                     tint = Color.White.copy(0.4f),
                                     modifier = Modifier.size(24.dp)
                                 )
                                 attachment.sizeBytes?.let {
-                                    Text(text = "${it / 1024} KB", color = TextSecondary, fontSize = 9.sp)
+                                    Text(
+                                        text = "${it / 1024} KB",
+                                        color = TextSecondary,
+                                        fontSize = 9.sp
+                                    )
                                 }
                             }
                         }

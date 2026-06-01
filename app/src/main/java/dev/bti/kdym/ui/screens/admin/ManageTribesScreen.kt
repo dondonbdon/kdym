@@ -106,7 +106,7 @@ fun ManageTribesScreen(
                                 .background(Color(0xFFEF4444).copy(0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(imageVector = Icons.Default.Shield, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(28.dp))
+                            MappedIcon(iosName = "shield.fill", tint = Color(0xFFEF4444), modifier = Modifier.size(28.dp))
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
@@ -340,7 +340,7 @@ fun TribeCardRedesign(
                     .background(color.copy(0.1f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = Icons.Default.Shield, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+                MappedIcon(iosName = tribe.iconName ?: "shield.fill", tint = color, modifier = Modifier.size(24.dp))
             }
             
             Spacer(modifier = Modifier.width(16.dp))

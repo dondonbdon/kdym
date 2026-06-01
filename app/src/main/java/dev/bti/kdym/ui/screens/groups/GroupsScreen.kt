@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.ui.components.GroupListCard
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.components.ScreenHeader
@@ -38,8 +39,8 @@ import dev.bti.kdym.viewmodels.MainViewModel
 @Composable
 fun GroupsScreen(
     onNavigateToChat: (String) -> Unit,
-    viewModel: GroupsViewModel = viewModel(),
-    mainViewModel: MainViewModel = viewModel()
+    viewModel: GroupsViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val appConfig by mainViewModel.appConfig.collectAsState()
     val isCampMode = appConfig?.campModeEnabled ?: false

@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bti.kdym.data.models.Tribe
-import dev.bti.kdym.ui.components.home.GlitchText
+import dev.bti.kdym.ui.components.GlitchText
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import androidx.core.graphics.toColorInt
 
@@ -65,19 +65,18 @@ fun TribeRevealOverlay(
                 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .background(tribeColor.copy(0.1f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = dev.bti.kdym.ui.utils.GroupIconHelper.getGroupIcon(tribe.iconName),
-                        contentDescription = null,
-                        tint = tribeColor,
-                        modifier = Modifier.size(64.dp)
-                    )
-                }
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .background(tribeColor.copy(0.1f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MappedIcon(
+                            iosName = tribe.iconName ?: "shield.fill",
+                            tint = tribeColor,
+                            modifier = Modifier.size(64.dp)
+                        )
+                    }
 
                 Spacer(modifier = Modifier.height(32.dp))
 

@@ -259,51 +259,51 @@ fun MemoryStackItem(index: Int, accentColor: Color, romanYear: String, imageName
                     fontFamily = QuickSandFontFamily
                 )
                 
-                Spacer(modifier = Modifier.weight(1f))
-                
-                if (index < 2 && resId == 0) {
-                    Icon(
-                        imageVector = if (index == 0) Icons.Default.AddPhotoAlternate else Icons.Default.AutoAwesome,
-                        contentDescription = null,
-                        tint = Color.White.copy(0.6f),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (index == 0) "ADD\nMEMORY" else "ADD\nMOMENT",
-                        color = TextSecondary,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = QuickSandFontFamily,
-                        lineHeight = 10.sp
-                    )
-                } else if (index >= 2 || resId != 0) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Groups,
-                            contentDescription = null,
-                            tint = accentColor,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "TIME TRAVEL",
-                            color = accentColor,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = QuickSandFontFamily
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (resId != 0) "Relive the moment." else "The light turned green. The call was movement, purpose, and bold obedience.",
-                        color = Color.White.copy(0.8f),
-                        fontSize = 8.sp,
-                        fontFamily = QuickSandFontFamily,
-                        lineHeight = 10.sp,
-                        maxLines = 4
-                    )
-                }
+//                Spacer(modifier = Modifier.weight(1f))
+//
+//                if (index < 2 && resId == 0) {
+//                    Icon(
+//                        imageVector = if (index == 0) Icons.Default.AddPhotoAlternate else Icons.Default.AutoAwesome,
+//                        contentDescription = null,
+//                        tint = Color.White.copy(0.6f),
+//                        modifier = Modifier.size(24.dp)
+//                    )
+//                    Spacer(modifier = Modifier.height(4.dp))
+//                    Text(
+//                        text = if (index == 0) "ADD\nMEMORY" else "ADD\nMOMENT",
+//                        color = TextSecondary,
+//                        fontSize = 8.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        fontFamily = QuickSandFontFamily,
+//                        lineHeight = 10.sp
+//                    )
+//                } else if (index >= 2 || resId != 0) {
+//                    Row(verticalAlignment = Alignment.CenterVertically) {
+//                        Icon(
+//                            imageVector = Icons.Default.Groups,
+//                            contentDescription = null,
+//                            tint = accentColor,
+//                            modifier = Modifier.size(12.dp)
+//                        )
+//                        Spacer(modifier = Modifier.width(4.dp))
+//                        Text(
+//                            text = "TIME TRAVEL",
+//                            color = accentColor,
+//                            fontSize = 8.sp,
+//                            fontWeight = FontWeight.Black,
+//                            fontFamily = QuickSandFontFamily
+//                        )
+//                    }
+//                    Spacer(modifier = Modifier.height(4.dp))
+//                    Text(
+//                        text = if (resId != 0) "Relive the moment." else "The light turned green. The call was movement, purpose, and bold obedience.",
+//                        color = Color.White.copy(0.8f),
+//                        fontSize = 8.sp,
+//                        fontFamily = QuickSandFontFamily,
+//                        lineHeight = 10.sp,
+//                        maxLines = 4
+//                    )
+//                }
             }
         }
     }

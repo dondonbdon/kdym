@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -106,13 +105,12 @@ fun TribeDetailsScreen(
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .background(Color(0xFF22D3EE).copy(0.1f), CircleShape),
+                        .background(tribeColor.copy(0.1f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocalFireDepartment,
-                        contentDescription = null,
-                        tint = Color(0xFF22D3EE),
+                    dev.bti.kdym.ui.components.MappedIcon(
+                        iosName = tribe?.iconName ?: "shield.fill",
+                        tint = tribeColor,
                         modifier = Modifier.size(28.dp)
                     )
                 }

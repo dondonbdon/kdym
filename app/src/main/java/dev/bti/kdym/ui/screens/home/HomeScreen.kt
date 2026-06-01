@@ -6,6 +6,7 @@ import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,8 +32,10 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +57,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.data.models.Camp
 import dev.bti.kdym.data.models.FeedPost
 import dev.bti.kdym.ui.components.GlassCard
@@ -71,17 +74,15 @@ import dev.bti.kdym.ui.components.home.VerseCard
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.viewmodels.MainViewModel
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
 import androidx.core.graphics.toColorInt
 
 @Composable
 fun HomeScreen(
     onNavigateToComments: (String) -> Unit,
-    onNavigateToCreatePost: () -> Unit,
     onNavigateToRequestAccess: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val camps = dev.bti.kdym.data.models.HARDCODED_CAMPS
     val user by viewModel.user.collectAsState()
@@ -99,14 +100,17 @@ fun HomeScreen(
                 user = user,
                 onPostClick = onNavigateToComments,
                 onReactionClick = { postId, reaction -> viewModel.toggleReaction(postId, reaction) },
-                onChangePhoto = {}
+                onChangePhoto = {},
+                getUserReaction = { viewModel.getUserReaction(it) },
+                viewModel = viewModel
             )
         }
     } else {
         StandardHomeView(
             camps = camps,
             user = user,
-            onNavigateToRequestAccess = onNavigateToRequestAccess
+            onNavigateToRequestAccess = onNavigateToRequestAccess,
+            viewModel = viewModel
         )
     }
 }
@@ -150,25 +154,46 @@ fun LiveUpdatesView(
     user: dev.bti.kdym.data.models.AppUser?,
     onPostClick: (String) -> Unit,
     onReactionClick: (String, String) -> Unit,
-    onChangePhoto: () -> Unit
+    onChangePhoto: () -> Unit,
+    getUserReaction: (String) -> kotlinx.coroutines.flow.Flow<String?>,
+    viewModel: MainViewModel
 ) {
     var selectedFilter by remember { mutableStateOf("NEW") }
     val filters = listOf("NEW", "PINNED", "URGENT", "MY GROUPS")
+    val isOverlayRecentlyDismissed by viewModel.isOverlayRecentlyDismissed.collectAsState(initial = false)
 
     OutpourBackground {
         Column(modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()) {
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
                 ScreenHeader(
                     isPrimary = true,
-                    isCampMode = true,
+                    isCampMode = true, // Set to false in StandardHomeView
                     userPhotoUrl = user?.photoURL,
                     userInitials = user?.initials,
-                    onChangePhoto = onChangePhoto
+                    onChangePhoto = onChangePhoto // use {} in StandardHomeView
                 )
+
+                if (isOverlayRecentlyDismissed) {
+                    IconButton(
+                        onClick = { viewModel.showOverlayAgain() },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd) // This acts as your right constraint
+                            .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                            .size(48.dp) // Optional: locks in the touch target size
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = "View Overlay Again",
+                            tint = Color(0xFF22D3EE)
+                        )
+                    }
+                }
             }
 
             LazyColumn(
@@ -295,9 +320,10 @@ fun LiveUpdatesView(
                 }
 
                 items(filteredPosts) { post ->
+                    val userReaction by getUserReaction(post.id).collectAsState(initial = null)
                     FeedPostCard(
                         post = post,
-                        userReaction = null, // TODO: Get user reaction
+                        userReaction = userReaction,
                         onReactionClick = onReactionClick,
                         onClick = { onPostClick(post.id) }
                     )
@@ -313,7 +339,8 @@ fun LiveUpdatesView(
 fun StandardHomeView(
     camps: List<Camp>,
     user: dev.bti.kdym.data.models.AppUser?,
-    onNavigateToRequestAccess: () -> Unit
+    onNavigateToRequestAccess: () -> Unit,
+    viewModel: MainViewModel
 ) {
     val view = LocalView.current
     val coroutineScope = rememberCoroutineScope()
@@ -344,6 +371,8 @@ fun StandardHomeView(
         dragOffset = dragOffsetY.value,
         campIndex = currentIndex
     ) {
+        val isOverlayRecentlyDismissed by viewModel.isOverlayRecentlyDismissed.collectAsState(initial = false)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -457,6 +486,19 @@ fun StandardHomeView(
                     userInitials = user?.initials,
                     onChangePhoto = {}
                 )
+
+                if (isOverlayRecentlyDismissed) {
+                    IconButton(
+                        onClick = { viewModel.showOverlayAgain() },
+                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = "View Overlay Again",
+                            tint = Color(0xFF22D3EE)
+                        )
+                    }
+                }
             }
 
             // Swipe Indicator
@@ -531,13 +573,26 @@ fun ActiveCampCard(
         Color(0xFFEF4444)
     }
 
+    val targetDate = remember(camp.startDate) { camp.startDate?.toDate() ?: java.util.Date() }
+    var isPastStartDate by remember { mutableStateOf(targetDate.time <= System.currentTimeMillis()) }
+
+    LaunchedEffect(targetDate) {
+        while (!isPastStartDate) {
+            isPastStartDate = targetDate.time <= System.currentTimeMillis()
+            if (isPastStartDate) break
+            delay(1000)
+        }
+    }
+
     Column(
         modifier = Modifier
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         HeroCard(camp = camp)
-        RegistrationButton()
+        if (!isPastStartDate) {
+            RegistrationButton()
+        }
         VerseCard(
             accentColor = accentColor,
             verse = camp.verse,

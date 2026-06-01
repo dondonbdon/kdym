@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ fun CommandCenterHubScreen(
     onNavigateToTribes: () -> Unit,
     onNavigateToTribeWars: () -> Unit,
     onNavigateToAnnouncements: () -> Unit,
+    onNavigateToUrgentOverlay: () -> Unit,
     onNavigateToGroups: () -> Unit,
     onNavigateToCreateEvent: () -> Unit,
     onNavigateToPostPlay: () -> Unit,
@@ -262,6 +264,45 @@ fun CommandCenterHubScreen(
                             )
                             Text(
                                 text = "Post announcements, urgent alerts, links, images, or group-targeted updates.",
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                fontFamily = QuickSandFontFamily
+                            )
+                        }
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.White.copy(0.3f), modifier = Modifier.size(20.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth().clickable { onNavigateToUrgentOverlay() },
+                    cornerRadius = 32.dp,
+                    backgroundColor = Color.Black.copy(0.3f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(Color(0xFFEF4444).copy(0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.Comment, contentDescription = null, tint = Color(0xFFEF4444))
+                        }
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "URGENT OVERLAY",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = QuickSandFontFamily
+                            )
+                            Text(
+                                text = "A full-screen message that appears over the app.",
                                 color = TextSecondary,
                                 fontSize = 12.sp,
                                 fontFamily = QuickSandFontFamily

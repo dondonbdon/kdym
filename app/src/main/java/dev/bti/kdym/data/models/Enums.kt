@@ -13,18 +13,14 @@ enum class UserRole(val title: String) {
     pending("Pending"),
     /** Approved attendee of the camp. */
     camper("Camper"),
+    /** Approved staff member. */
+    staff("Worker"),
+    /** Local church pastor. */
+    pastor("Pastor"),
     /** User with oversight responsibilities for group. */
     groupLeader("Group Leader"),
     /** User with oversight responsibilities for tribes. */
     tribeLeader("Tribe Leader"),
-    /** Approved staff member. */
-    staff("Worker"),
-    /** Specialized role for managing tribe points. */
-    pointManager("Point Manager"),
-    /** User with oversight responsibilities for tribes or groups. */
-    leader("Leader"),
-    /** Local church pastor. */
-    pastor("Pastor"),
     /** Full system administrator. */
     admin("Admin"),
     /** Global super administrator with full system control. */
@@ -42,8 +38,11 @@ enum class UserRole(val title: String) {
     val isAdmin: Boolean
         get() = this == admin || this == superAdmin
 
+    val isSuperAdmin: Boolean
+        get() = this == superAdmin
+
     val isLeader: Boolean
-        get() = isAdmin || this == leader
+        get() = isAdmin || this == tribeLeader || this == groupLeader
 
     val isGroupLeader: Boolean
         get() = isLeader || this == groupLeader
@@ -51,14 +50,12 @@ enum class UserRole(val title: String) {
     val isTribeLeader: Boolean
         get() = isLeader || this == tribeLeader
 
-    val isPointManager: Boolean
-        get() = isLeader || this == pointManager
 
     val isStaff: Boolean
         get() = isLeader || this == staff
 
     val canAccessCommand: Boolean
-        get() = isPointManager || isTribeLeader || isGroupLeader
+        get() =  isTribeLeader || isGroupLeader
 
     val canManageCampSettings: Boolean
         get() = isAdmin
@@ -70,7 +67,7 @@ enum class UserRole(val title: String) {
         get() = isLeader
 
     val canManagePoints: Boolean
-        get() = isPointManager || isTribeLeader
+        get() =  isTribeLeader
 
     val canManageAnnouncements: Boolean
         get() = isLeader

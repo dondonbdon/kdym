@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.data.models.Church
 import dev.bti.kdym.ui.components.CommandInputField
 import dev.bti.kdym.ui.components.GlassCard
@@ -44,7 +45,7 @@ enum class SignUpPhase {
 fun SignUpScreen(
     onSignUp: (String, String, String, String?, String?, String?, String, String) -> Unit,
     onNavigateToLogin: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     var phase by remember { mutableStateOf(SignUpPhase.PERSONAL_INFO) }
     
@@ -165,15 +166,20 @@ fun SignUpScreen(
                 }
             }
 
+            // ✅ TOP LOADING BAR (Fixed Layout)
             if (isLoading) {
-                LinearProgressIndicator(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .align(Alignment.TopCenter)
                         .statusBarsPadding()
-                        .align(Alignment.TopCenter),
-                    color = RedAccent,
-                    trackColor = Color.White.copy(alpha = 0.1f)
-                )
+                ) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = RedAccent,
+                        trackColor = Color.White.copy(alpha = 0.1f)
+                    )
+                }
             }
         }
     }
@@ -532,7 +538,7 @@ fun ChurchSelectionPhase(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Button(
             onClick = onSignUp,
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 16.dp),

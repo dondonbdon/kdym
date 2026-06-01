@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.R
 import dev.bti.kdym.ui.components.CommandInputField
 import dev.bti.kdym.ui.components.GlassCard
@@ -43,7 +44,7 @@ import dev.bti.kdym.viewmodels.MainViewModel
 fun LoginScreen(
     onSignIn: (String, String) -> Unit,
     onNavigateToSignUp: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -250,14 +251,18 @@ fun LoginScreen(
 
             // ✅ TOP LOADING BAR (no UI shift)
             if (isLoading) {
-                LinearProgressIndicator(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .align(Alignment.TopCenter)
                         .statusBarsPadding()
-                        .align(Alignment.TopCenter),
-                    color = RedAccent,
-                    trackColor = Color.White.copy(alpha = 0.1f)
-                )
+                ) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = RedAccent,
+                        trackColor = Color.White.copy(alpha = 0.1f)
+                    )
+                }
             }
         }
     }

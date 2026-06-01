@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.bti.kdym.R
 import dev.bti.kdym.data.models.EventCategory
 import dev.bti.kdym.data.models.KDYMEvent
@@ -53,8 +54,8 @@ enum class EventScope(val title: String) {
 fun EventsScreen(
     onNavigateToEventDetail: (String) -> Unit,
     onNavigateToCreateEvent: () -> Unit = {},
-    mainViewModel: MainViewModel = viewModel(),
-    adminViewModel: AdminViewModel = viewModel()
+    mainViewModel: MainViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     var selectedScope by remember { mutableStateOf(EventScope.ALL_EVENTS) }
 

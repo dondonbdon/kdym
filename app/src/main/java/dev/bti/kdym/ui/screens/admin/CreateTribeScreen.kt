@@ -36,7 +36,7 @@ fun CreateTribeScreen(
 
     var tribeName by remember(existingTribe) { mutableStateOf(existingTribe?.name ?: "") }
     var subtitle by remember(existingTribe) { mutableStateOf(existingTribe?.subtitle ?: "") }
-    var iconName by remember(existingTribe) { mutableStateOf(existingTribe?.iconName ?: "shield") }
+    var iconName by remember(existingTribe) { mutableStateOf(existingTribe?.iconName ?: "shield.fill") }
     var colorHex by remember(existingTribe) { mutableStateOf(existingTribe?.colorHex ?: "#EF4444") }
 
     val allUsers by viewModel.allUsers.collectAsState()
@@ -58,14 +58,14 @@ fun CreateTribeScreen(
 
     val colors = listOf("#EF4444", "#22D3EE", "#EAB308", "#10B981", "#8B5CF6", "#F472B6")
     val icons = listOf(
-        "shield" to Icons.Default.Shield,
-        "flame" to Icons.Default.LocalFireDepartment,
-        "bolt" to Icons.Default.Bolt,
-        "crown" to Icons.Default.EmojiEvents,
-        "star" to Icons.Default.Star,
-        "rabbit" to Icons.Default.Pets,
-        "leaf" to Icons.Default.Eco,
-        "sun" to Icons.Default.LightMode
+        "shield.fill" to Icons.Default.Shield,
+        "flame.fill" to Icons.Default.LocalFireDepartment,
+        "bolt.fill" to Icons.Default.Bolt,
+        "crown.fill" to Icons.Default.EmojiEvents,
+        "star.fill" to Icons.Default.Star,
+        "hare.fill" to Icons.Default.Pets,
+        "leaf.fill" to Icons.Default.Eco,
+        "sun.max.fill" to Icons.Default.LightMode
     )
 
     OutpourBackground {
@@ -214,7 +214,7 @@ fun CreateTribeScreen(
                         fontFamily = QuickSandFontFamily
                     )
                     IconButton(
-                        onClick = { },
+                        onClick = { showLeaderPicker = true },
                         modifier = Modifier.background(Color.White.copy(0.1f), CircleShape)
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.White)

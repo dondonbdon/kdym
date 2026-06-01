@@ -50,6 +50,12 @@ data class AppGroupEntity(
     val lastMessageAt: Long
 )
 
+@Entity(tableName = "user_preferences")
+data class UserPreferenceEntity(
+    @PrimaryKey val userId: String,
+    val tribeRevealShown: Boolean = false
+)
+
 // ==========================================
 // MARK: - DAOs
 // ==========================================
@@ -114,13 +120,29 @@ interface AppGroupDao {
     suspend fun clearAll()
 }
 
+@Dao
+interface UserPreferenceDao {
+    @Query("SELECT * FROM user_preferences WHERE userId = :userId")
+    fun getUserPreferences(userId: String): Flow<UserPreferenceEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUserPreference(pref: UserPreferenceEntity)
+}
+
 // ==========================================
 // MARK: - Database
 // ==========================================
 
 @Database(
-    entities = [FeedPostEntity::class, PlayItemEntity::class, GroupMessageEntity::class, TribeEntity::class, AppGroupEntity::class],
-    version = 1,
+    entities = [
+        FeedPostEntity::class, 
+        PlayItemEntity::class, 
+        GroupMessageEntity::class, 
+        TribeEntity::class, 
+        AppGroupEntity::class,
+        UserPreferenceEntity::class
+    ],
+    version = 2,
     exportSchema = false
 )
 abstract class KdymDatabase : RoomDatabase() {
@@ -129,6 +151,7 @@ abstract class KdymDatabase : RoomDatabase() {
     abstract fun groupMessageDao(): GroupMessageDao
     abstract fun tribeDao(): TribeDao
     abstract fun appGroupDao(): AppGroupDao
+    abstract fun userPreferenceDao(): UserPreferenceDao
 
     companion object {
         @Volatile
@@ -140,7 +163,9 @@ abstract class KdymDatabase : RoomDatabase() {
                     context.applicationContext,
                     KdymDatabase::class.java,
                     "kdym_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration(false)
+                .build()
                 INSTANCE = instance
                 instance
             }

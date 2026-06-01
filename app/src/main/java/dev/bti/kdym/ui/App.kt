@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import android.os.Build
 import dev.bti.kdym.MainNavigation
 import dev.bti.kdym.ui.components.AnimatedSplash
@@ -27,7 +29,7 @@ import dev.bti.kdym.ui.screens.auth.WelcomeScreen
 import dev.bti.kdym.ui.screens.auth.PostAuthWelcomeScreen
 
 @Composable
-fun App(viewModel: MainViewModel = viewModel()) {
+fun App(viewModel: MainViewModel = hiltViewModel()) {
     var showSplash by remember { mutableStateOf(true) }
     val firebaseUser by viewModel.firebaseUser.collectAsState()
     val appConfig by viewModel.appConfig.collectAsState()
@@ -35,7 +37,9 @@ fun App(viewModel: MainViewModel = viewModel()) {
     
     var currentAuthScreen by remember { mutableStateOf("welcome") }
     var hasShownWelcome by remember { mutableStateOf(false) }
-    var dismissedOverlayId by remember { mutableStateOf<String?>(null) }
+
+    val globalOverlay by viewModel.globalOverlay.collectAsState()
+    val shouldShowOverlay by viewModel.shouldShowOverlay.collectAsState(initial = false)
     
     val shouldRequestPermissions by viewModel.shouldRequestPermissions.collectAsState()
     val context = LocalContext.current
@@ -60,21 +64,12 @@ fun App(viewModel: MainViewModel = viewModel()) {
         }
     }
 
-    val showUrgentOverlay = remember(appConfig, user, dismissedOverlayId) {
-        val config = appConfig?.urgentOverlay
-        if (config == null || !config.isVisibleNow) return@remember false
-        
-        // Filter out if user already dismissed this specific version
-        if (dismissedOverlayId == config.updatedAt?.toString()) return@remember false
-        
-        // Filter targets
-        if (config.excludeAdmins && user?.isAdmin == true) return@remember false
-        if (config.onlyApprovedCamp && user?.hasApprovedCampAccess != true) return@remember false
-        
-        val targetEmails = config.targetEmails?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
-        if (!targetEmails.isNullOrEmpty() && user?.email !in targetEmails) return@remember false
-        
-        true
+    // Reset auth routing state when a user logs out
+    LaunchedEffect(firebaseUser) {
+        if (firebaseUser == null) {
+            currentAuthScreen = "welcome"
+            hasShownWelcome = false
+        }
     }
 
     AnimatedContent(
@@ -91,59 +86,66 @@ fun App(viewModel: MainViewModel = viewModel()) {
             }
         } else {
             val uiState by viewModel.uiState.collectAsState()
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column {
-                    if (uiState.isLoading && firebaseUser == null) {
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().statusBarsPadding(),
-                            color = Color(0xFFEF4444),
-                            trackColor = Color.Transparent
-                        )
-                    }
-                    if (firebaseUser != null) {
-                        if (!hasShownWelcome && user != null && currentAuthScreen != "welcome") {
-                            PostAuthWelcomeScreen(
-                                name = user?.displayName ?: "Friend",
-                                onContinue = { hasShownWelcome = true }
-                            )
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
+            ) {
+                AnimatedContent(
+                    targetState = firebaseUser != null,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(500)) togetherWith
+                                fadeOut(animationSpec = tween(500))
+                    },
+                    label = "auth_state_transition"
+                ) { isLoggedIn ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (isLoggedIn) {
+                            if (!hasShownWelcome && user != null && currentAuthScreen != "welcome") {
+                                PostAuthWelcomeScreen(
+                                    name = user?.displayName ?: "Friend",
+                                    onContinue = { hasShownWelcome = true }
+                                )
+                            } else {
+                                MainNavigation(viewModel)
+                            }
                         } else {
-                            MainNavigation(viewModel)
-                        }
-                    } else {
-                        when (currentAuthScreen) {
-                            "welcome" -> WelcomeScreen(
-                                onNavigateToLogin = { currentAuthScreen = "login" },
-                                onNavigateToSignUp = { currentAuthScreen = "signup" }
-                            )
-                            "login" -> LoginScreen(
-                                onSignIn = { email, pass -> 
-                                    viewModel.signIn(email, pass) { success ->
-                                        if (success) { 
-                                            currentAuthScreen = "post_auth"
-                                            hasShownWelcome = false 
+                            when (currentAuthScreen) {
+                                "welcome" -> WelcomeScreen(
+                                    onNavigateToLogin = { currentAuthScreen = "login" },
+                                    onNavigateToSignUp = { currentAuthScreen = "signup" }
+                                )
+                                "login" -> LoginScreen(
+                                    onSignIn = { email, pass -> 
+                                        viewModel.signIn(email, pass) { success ->
+                                            if (success) { 
+                                                currentAuthScreen = "post_auth"
+                                                hasShownWelcome = false 
+                                            }
                                         }
-                                    }
-                                },
-                                onNavigateToSignUp = { currentAuthScreen = "signup" }
-                            )
-                            "signup" -> SignUpScreen(
-                                onSignUp = { firstName, lastName, username, phone, churchId, churchName, email, pass ->
-                                    viewModel.signUp(firstName, lastName, username, phone, churchId, churchName, email, pass) { success ->
-                                        if (success) { 
-                                            currentAuthScreen = "post_auth"
-                                            hasShownWelcome = false 
+                                    },
+                                    onNavigateToSignUp = { currentAuthScreen = "signup" }
+                                )
+                                "signup" -> SignUpScreen(
+                                    onSignUp = { firstName, lastName, username, phone, churchId, churchName, email, pass ->
+                                        viewModel.signUp(firstName, lastName, username, phone, churchId, churchName, email, pass) { success ->
+                                            if (success) { 
+                                                currentAuthScreen = "post_auth"
+                                                hasShownWelcome = false 
+                                            }
                                         }
-                                    }
-                                },
-                                onNavigateToLogin = { currentAuthScreen = "login" }
-                            )
+                                    },
+                                    onNavigateToLogin = { currentAuthScreen = "login" }
+                                )
+                            }
                         }
                     }
                 }
                 
-                if (showUrgentOverlay && appConfig?.urgentOverlay != null) {
-                    UrgentOverlay(config = appConfig!!.urgentOverlay!!) {
-                        dismissedOverlayId = appConfig!!.urgentOverlay!!.updatedAt?.toString()
+                if (shouldShowOverlay && globalOverlay != null) {
+                    UrgentOverlay(overlay = globalOverlay!!) {
+                        viewModel.dismissOverlay()
                     }
                 }
             }

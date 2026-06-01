@@ -13,7 +13,7 @@ object FcmManager {
     suspend fun syncCurrentToken() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
-            Log.d("FCM", "No user logged in, skipping sync")
+            Log.e("FCM", "No user logged in, skipping sync")
             return
         }
 
@@ -24,7 +24,6 @@ object FcmManager {
                 return
             }
 
-            Log.d("FCM", "Token sync triggered for user: $uid")
             FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(uid)
@@ -34,7 +33,6 @@ object FcmManager {
                 )
                 .await()
 
-            Log.d("FCM", "Token synced")
 
         } catch (e: Exception) {
             Log.e("FCM", "Failed to sync token", e)

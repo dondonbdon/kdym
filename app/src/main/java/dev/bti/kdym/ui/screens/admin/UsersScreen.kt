@@ -3,7 +3,21 @@ package dev.bti.kdym.ui.screens.admin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -12,10 +26,33 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,7 +73,6 @@ import dev.bti.kdym.ui.components.GlassCard
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.components.admin.ManagementFilterTabItem
 import dev.bti.kdym.ui.components.admin.PickerBottomSheet
-import dev.bti.kdym.ui.theme.RedAccent
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
@@ -72,8 +108,10 @@ fun UsersScreen(
         }
     }
 
-    val pendingUsers = remember(filteredUsers) { filteredUsers.filter { it.statusEnum == AccessStatus.pending } }
-    val otherUsers = remember(filteredUsers) { filteredUsers.filter { it.statusEnum != AccessStatus.pending } }
+    val pendingUsers =
+        remember(filteredUsers) { filteredUsers.filter { it.statusEnum == AccessStatus.pending } }
+    val otherUsers =
+        remember(filteredUsers) { filteredUsers.filter { it.statusEnum != AccessStatus.pending } }
 
     var selectedUser by remember { mutableStateOf<AppUser?>(null) }
     val currentUser by viewModel.appUser.collectAsState()
@@ -101,9 +139,18 @@ fun UsersScreen(
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "BACK", fontWeight = FontWeight.Black, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "BACK",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
 
                 Surface(
@@ -113,7 +160,12 @@ fun UsersScreen(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
@@ -133,7 +185,12 @@ fun UsersScreen(
                                 .background(Color(0xFFEF4444).copy(0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(imageVector = Icons.Default.People, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(28.dp))
+                            Icon(
+                                imageVector = Icons.Default.People,
+                                contentDescription = null,
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(28.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
@@ -155,10 +212,28 @@ fun UsersScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Stats Card
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        AccessStatBox(count = pendingCount, label = "PENDING", color = Color(0xFFEAB308), modifier = Modifier.weight(1f))
-                        AccessStatBox(count = totalCount, label = "USERS", color = Color(0xFF22D3EE), modifier = Modifier.weight(1f))
-                        AccessStatBox(count = approvedCount, label = "APPROVED", color = Color(0xFF10B981), modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AccessStatBox(
+                            count = pendingCount,
+                            label = "PENDING",
+                            color = Color(0xFFEAB308),
+                            modifier = Modifier.weight(1f)
+                        )
+                        AccessStatBox(
+                            count = totalCount,
+                            label = "USERS",
+                            color = Color(0xFF22D3EE),
+                            modifier = Modifier.weight(1f)
+                        )
+                        AccessStatBox(
+                            count = approvedCount,
+                            label = "APPROVED",
+                            color = Color(0xFF10B981),
+                            modifier = Modifier.weight(1f)
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -192,7 +267,7 @@ fun UsersScreen(
                     item {
                         Text(
                             text = "PENDING REQUESTS",
-                            color = RedAccent,
+                            color = Color(0xFFEAB308), // Updated to match the warning tint
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 2.sp,
@@ -200,7 +275,17 @@ fun UsersScreen(
                         )
                     }
                     items(pendingUsers) { user ->
-                        UserRow(user = user, onClick = { selectedUser = user })
+                        PendingRequestRow(
+                            user = user,
+                            onClick = { selectedUser = user },
+                            onApprove = {
+                                viewModel.approveUser(
+                                    user.uid,
+                                    UserRole.fromString(user.requestedRole)
+                                )
+                            },
+                            onReject = { viewModel.rejectUser(user.uid) }
+                        )
                     }
                 }
 
@@ -215,14 +300,17 @@ fun UsersScreen(
                             fontFamily = QuickSandFontFamily
                         )
                     }
-                    
+
                     items(otherUsers) { user ->
-                        UserRow(user = user, onClick = { selectedUser = user })
+                        GeneralUserRow(
+                            user = user,
+                            onClick = { selectedUser = user }
+                        )
                     }
                 }
             }
         }
-        
+
         if (selectedUser != null) {
             ManageUserDialog(
                 user = selectedUser!!,
@@ -230,13 +318,13 @@ fun UsersScreen(
                 currentUser = currentUser,
                 onDismiss = { selectedUser = null },
                 onSave = { updatedUser ->
-                    viewModel.updateUser(updatedUser.uid, mapOf(
-                        "role" to updatedUser.role,
-                        "accessStatus" to updatedUser.accessStatus,
-                        "isAdmin" to updatedUser.isAdmin,
-                        "isLeader" to updatedUser.isLeader,
-                        "tribeId" to updatedUser.tribeId
-                    ))
+                    viewModel.updateUser(
+                        updatedUser.uid, mapOf(
+                            "role" to updatedUser.role,
+                            "accessStatus" to updatedUser.accessStatus,
+                            "tribeId" to updatedUser.tribeId
+                        )
+                    )
                     selectedUser = null
                 }
             )
@@ -256,22 +344,38 @@ fun AccessStatBox(count: Int, label: String, color: Color, modifier: Modifier = 
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = count.toString(), color = color, fontSize = 24.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
-            Text(text = label, color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, fontFamily = QuickSandFontFamily)
+            Text(
+                text = count.toString(),
+                color = color,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = QuickSandFontFamily
+            )
+            Text(
+                text = label,
+                color = TextSecondary,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                fontFamily = QuickSandFontFamily
+            )
         }
     }
 }
 
 @Composable
-fun UserRow(user: AppUser, onClick: () -> Unit) {
-    val isDeleted = user.isDeleted
-
+fun PendingRequestRow(
+    user: AppUser,
+    onClick: () -> Unit,
+    onApprove: () -> Unit,
+    onReject: () -> Unit
+) {
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = !isDeleted) { onClick() }
-            .alpha(if (isDeleted) 0.5f else 1f),
-        backgroundColor = Color.White.copy(0.045f),
+            .clickable { onClick() },
+        backgroundColor = Color(0xFFEAB308).copy(0.05f), // Subtle yellow/gold tint to indicate "action needed"
+        borderColor = Color(0xFFEAB308).copy(0.2f),
         cornerRadius = 24.dp,
         contentPadding = 0.dp
     ) {
@@ -279,42 +383,164 @@ fun UserRow(user: AppUser, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
+            // Pending Avatar (Gold/Orange Gradient)
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(52.dp)
                     .background(
-                        brush = if (isDeleted) {
-                            SolidColor(Color.White.copy(0.1f))
-                        } else {
-                            Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFF22D3EE)))
-                        },
-                        shape = CircleShape
+                        Brush.linearGradient(listOf(Color(0xFFFACC15), Color(0xFFF59E0B))),
+                        CircleShape
                     )
-                    .border(1.dp, Color.White.copy(if (isDeleted) 0.05f else 0.15f), CircleShape),
+                    .border(2.dp, Color(0xFFEAB308).copy(0.3f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = user.initials,
-                    color = if (isDeleted) TextSecondary else Color.White,
+                    color = Color.Black,
                     fontWeight = FontWeight.Black,
-                    fontSize = 15.sp,
+                    fontSize = 16.sp,
                     fontFamily = QuickSandFontFamily
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-
+            // User Info & Request details
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = user.displayName,
                     color = Color.White,
                     fontWeight = FontWeight.Black,
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
+                    fontFamily = QuickSandFontFamily,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    text = user.email,
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = QuickSandFontFamily,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Clean Request Indicator
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = null,
+                        tint = Color(0xFFEAB308),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "REQUESTED: ${user.requestedRole?.uppercase()}",
+                        color = Color(0xFFEAB308),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Refined Action Buttons
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(
+                    onClick = onReject,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFEF4444).copy(0.15f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Reject",
+                        tint = Color(0xFFEF4444),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onApprove,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFF10B981).copy(0.15f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Approve",
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GeneralUserRow(
+    user: AppUser,
+    onClick: () -> Unit
+) {
+    val isDeleted = user.isDeleted
+
+    GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isDeleted) { onClick() }
+            .alpha(if (isDeleted) 0.5f else 1f),
+        backgroundColor = Color.White.copy(0.03f),
+        borderColor = Color.White.copy(0.05f),
+        cornerRadius = 24.dp,
+        contentPadding = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // General Avatar (Standard Gradient)
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .background(
+                        brush = if (isDeleted) SolidColor(Color.White.copy(0.1f)) else Brush.linearGradient(
+                            listOf(Color(0xFFEF4444), Color(0xFF22D3EE))
+                        ),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = user.initials,
+                    color = if (isDeleted) TextSecondary else Color.White,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp,
+                    fontFamily = QuickSandFontFamily
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // User Info & Badges
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = user.displayName,
+                    color = Color.White,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 18.sp,
                     fontFamily = QuickSandFontFamily,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -331,24 +557,29 @@ fun UserRow(user: AppUser, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
 
+                Spacer(modifier = Modifier.height(4.dp))
+
                 Row(
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (isDeleted) {
-                        StatusBadge(
-                            text = "DELETED",
-                            color = Color(0xFFEF4444) // RedAccent
-                        )
+                        StatusBadge(text = "DELETED", color = Color(0xFFEF4444))
                     } else {
-                        StatusBadge(
-                            text = user.statusEnum.title.uppercase(),
-                            color = if (user.statusEnum == AccessStatus.approved) Color(0xFF22D3EE) else Color.White.copy(0.4f)
-                        )
+                        // Colored badges based on current status
+                        val statusColor = when (user.statusEnum) {
+                            AccessStatus.approved -> Color(0xFF10B981)
+                            AccessStatus.suspended -> Color(0xFFEF4444)
+                            else -> Color.White.copy(0.4f)
+                        }
+
+                        StatusBadge(text = user.statusEnum.title.uppercase(), color = statusColor)
                         StatusBadge(
                             text = user.roleEnum.title.uppercase(),
-                            color = Color(0xFFEF4444) // RedAccent
+                            color = Color(0xFF22D3EE)
                         )
                     }
                 }
@@ -356,7 +587,6 @@ fun UserRow(user: AppUser, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Trailing Icon
             if (isDeleted) {
                 Icon(
                     imageVector = Icons.Default.Block,
@@ -366,7 +596,7 @@ fun UserRow(user: AppUser, onClick: () -> Unit) {
                 )
             } else {
                 Icon(
-                    imageVector = Icons.Default.ChevronRight, // ChevronRight looks cleaner for list items than ArrowForward
+                    imageVector = Icons.Default.ChevronRight,
                     contentDescription = "View Profile",
                     tint = Color.White.copy(0.3f),
                     modifier = Modifier.size(20.dp)
@@ -404,10 +634,8 @@ fun ManageUserDialog(
 ) {
     var role by remember { mutableStateOf(user.roleEnum) }
     var status by remember { mutableStateOf(user.statusEnum) }
-    var isAdmin by remember { mutableStateOf(user.isAdmin) }
-    var isLeader by remember { mutableStateOf(user.isLeader) }
     var tribeId by remember { mutableStateOf(user.tribeId) }
-    
+
     var showTribePicker by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
@@ -415,91 +643,199 @@ fun ManageUserDialog(
         containerColor = Color(0xFF111111),
         scrimColor = Color.Black.copy(0.6f)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp).verticalScroll(rememberScrollState())) {
-            Text(text = "MANAGE", color = Color(0xFF22D3EE), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, fontFamily = QuickSandFontFamily)
-            Text(text = "USER ACCESS", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
-            
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = "MANAGE",
+                color = Color(0xFF22D3EE),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp,
+                fontFamily = QuickSandFontFamily
+            )
+            Text(
+                text = "USER ACCESS",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = QuickSandFontFamily
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
-            
-            GlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = Color.White.copy(0.05f)) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(56.dp).background(Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFF22D3EE))), CircleShape), contentAlignment = Alignment.Center) {
-                        Text(text = user.initials, color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp, fontFamily = QuickSandFontFamily)
+
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = Color.White.copy(0.05f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        Color(0xFFEF4444),
+                                        Color(0xFF22D3EE)
+                                    )
+                                ), CircleShape
+                            ), contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = user.initials,
+                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 18.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
-                        Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp, fontFamily = QuickSandFontFamily)
-                        Text(text = user.email, color = TextSecondary, fontSize = 14.sp, fontFamily = QuickSandFontFamily)
-                        Text(text = user.uid, color = Color.White.copy(0.2f), fontSize = 10.sp, fontFamily = QuickSandFontFamily)
+                        Text(
+                            text = user.displayName,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Text(
+                            text = user.email,
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Text(
+                            text = user.uid,
+                            color = Color.White.copy(0.2f),
+                            fontSize = 10.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(text = "Role & Status", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+
+            Text(
+                text = "Role & Status",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = QuickSandFontFamily
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             RoleSelector(
                 currentRole = role,
                 currentUser = currentUser,
                 onRoleSelected = { role = it }
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // Tribe Selector
             GlassCard(
-                modifier = Modifier.fillMaxWidth().clickable { showTribePicker = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showTribePicker = true },
                 backgroundColor = Color.White.copy(0.05f)
             ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Column {
-                        Text(text = "TRIBE", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
-                        Text(text = tribes.find { it.id == tribeId }?.name ?: "NONE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                        Text(
+                            text = "TRIBE",
+                            color = TextSecondary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Text(
+                            text = tribes.find { it.id == tribeId }?.name ?: "NONE",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = QuickSandFontFamily
+                        )
                     }
-                    Icon(imageVector = Icons.Default.Shield, contentDescription = null, tint = Color(0xFFEAB308))
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = Color(0xFFEAB308)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            PermissionToggle("Admin privileges", isAdmin) { 
-                if (currentUser?.isAdmin == true || currentUser?.roleEnum == UserRole.superAdmin) {
-                    isAdmin = it 
-                }
-            }
-            PermissionToggle("Leader privileges", isLeader) { 
-                if (currentUser?.isLeader == true || currentUser?.isAdmin == true) {
-                    isLeader = it 
-                }
-            }
-            
             Spacer(modifier = Modifier.height(24.dp))
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ActionButton(text = "APPROVE", color = Color(0xFF10B981).copy(0.2f), textColor = Color(0xFF10B981), modifier = Modifier.weight(1f)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionButton(
+                    text = "APPROVE",
+                    color = Color(0xFF10B981).copy(0.2f),
+                    textColor = Color(0xFF10B981),
+                    modifier = Modifier.weight(1f)
+                ) {
                     status = AccessStatus.approved
                 }
-                ActionButton(text = "PUBLIC", color = Color.White.copy(0.1f), textColor = Color.White, modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    text = "PUBLIC",
+                    color = Color.White.copy(0.1f),
+                    textColor = Color.White,
+                    modifier = Modifier.weight(1f)
+                ) {
                     status = AccessStatus.public
                 }
-                ActionButton(text = "SUSPEND", color = Color(0xFFEF4444).copy(0.2f), textColor = Color(0xFFEF4444), modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    text = "SUSPEND",
+                    color = Color(0xFFEF4444).copy(0.2f),
+                    textColor = Color(0xFFEF4444),
+                    modifier = Modifier.weight(1f)
+                ) {
                     status = AccessStatus.suspended
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             Button(
-                onClick = { onSave(user.copy(role = role.name, accessStatus = status.name, isAdmin = isAdmin, isLeader = isLeader, tribeId = tribeId)) },
-                modifier = Modifier.fillMaxWidth().height(56.dp).navigationBarsPadding(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                onClick = {
+                    onSave(
+                        user.copy(
+                            role = role.name,
+                            accessStatus = status.name,
+                            tribeId = tribeId
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .navigationBarsPadding(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color.Black
+                ),
                 shape = CircleShape
             ) {
                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "SAVE USER", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                Text(
+                    text = "SAVE USER",
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily
+                )
             }
         }
 
@@ -525,25 +861,49 @@ fun RoleSelector(
     onRoleSelected: (UserRole) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Box {
         GlassCard(
-            modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true },
             backgroundColor = Color.White.copy(0.05f)
         ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Column {
-                    Text(text = "ROLE", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
-                    Text(text = currentRole.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = "ROLE",
+                        color = TextSecondary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Text(
+                        text = currentRole.title,
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
-                Icon(imageVector = Icons.Default.UnfoldMore, contentDescription = null, tint = Color.White.copy(0.4f))
+                Icon(
+                    imageVector = Icons.Default.UnfoldMore,
+                    contentDescription = null,
+                    tint = Color.White.copy(0.4f)
+                )
             }
         }
-        
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(Color(0xFF111111)).fillMaxWidth(0.9f)
+            modifier = Modifier
+                .background(Color(0xFF111111))
+                .fillMaxWidth(0.9f)
         ) {
             UserRole.entries.forEach { r ->
                 // Basic permission check: can only assign roles if you have higher or equal rank
@@ -553,18 +913,31 @@ fun RoleSelector(
                 val canAssign = when (currentUser?.roleEnum) {
                     UserRole.superAdmin -> true
                     UserRole.admin -> r != UserRole.superAdmin
-                    UserRole.leader -> r != UserRole.superAdmin && r != UserRole.admin
+                    UserRole.tribeLeader -> r != UserRole.superAdmin && r != UserRole.admin
+                    UserRole.groupLeader -> r != UserRole.superAdmin && r != UserRole.admin
                     else -> currentUser?.isAdmin == true && r != UserRole.superAdmin
                 }
 
                 if (canAssign) {
                     DropdownMenuItem(
-                        text = { Text(text = r.title, color = Color.White, fontFamily = QuickSandFontFamily) },
-                        onClick = { 
+                        text = {
+                            Text(
+                                text = r.title,
+                                color = Color.White,
+                                fontFamily = QuickSandFontFamily
+                            )
+                        },
+                        onClick = {
                             onRoleSelected(r)
                             expanded = false
                         },
-                        trailingIcon = { if (currentRole == r) Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color(0xFF22D3EE)) else null }
+                        trailingIcon = {
+                            if (currentRole == r) Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF22D3EE)
+                            )
+                        }
                     )
                 }
             }
@@ -574,35 +947,29 @@ fun RoleSelector(
 
 
 @Composable
-fun PermissionToggle(title: String, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = title, color = Color.White, fontSize = 16.sp, fontFamily = QuickSandFontFamily)
-        Switch(
-            checked = enabled,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF22D3EE),
-                uncheckedThumbColor = Color.White.copy(0.6f),
-                uncheckedTrackColor = Color.White.copy(0.1f)
-            )
-        )
-    }
-}
-
-@Composable
-fun ActionButton(text: String, color: Color, textColor: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun ActionButton(
+    text: String,
+    color: Color,
+    textColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Surface(
-        modifier = modifier.height(40.dp).clickable { onClick() },
+        modifier = modifier
+            .height(40.dp)
+            .clickable { onClick() },
         color = color,
         shape = RoundedCornerShape(20.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(text = text, color = textColor, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, fontFamily = QuickSandFontFamily)
+            Text(
+                text = text,
+                color = textColor,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                fontFamily = QuickSandFontFamily
+            )
         }
     }
 }

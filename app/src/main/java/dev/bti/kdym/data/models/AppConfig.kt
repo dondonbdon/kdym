@@ -29,27 +29,11 @@ data class AppConfig(
     val allowCampScheduleVisible: Boolean = true,
     val maintenanceMode: Boolean = false,
     val tribeWarsScoreVisible: Boolean = false,
-    val urgentOverlay: UrgentOverlayConfig? = null,
     @Serializable(with = TimestampSerializer::class)
     val updatedAt: Timestamp? = null,
     val facebookLiveEnabled: Boolean = false,
     val facebookLiveTitle: String? = null,
     val facebookLiveURL: String? = null,
-)
-
-@Serializable
-data class UrgentOverlayConfig(
-    val title: String = "",
-    val subtitle: String = "",
-    val message: String = "",
-    val buttonLabel: String = "Got it",
-    val targetEmails: String? = null,
-    val isVisibleNow: Boolean = false,
-    val excludeAdmins: Boolean = true,
-    val onlyApprovedCamp: Boolean = false,
-    val minViewTimeSeconds: Int = 5,
-    @Serializable(with = TimestampSerializer::class)
-    val updatedAt: Timestamp? = null
 )
 
 @Serializable

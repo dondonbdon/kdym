@@ -26,15 +26,18 @@ import dev.bti.kdym.ui.components.*
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
+import dev.bti.kdym.viewmodels.MainViewModel
 
 @Composable
 fun AddScoreScreen(
     initialTribeId: String? = null,
     onNavigateBack: () -> Unit,
-    viewModel: AdminViewModel
+    viewModel: AdminViewModel,
+    mainViewModel: MainViewModel
 ) {
     val tribes by viewModel.tribes.collectAsState()
     val events by viewModel.tribeEvents.collectAsState()
+    val user by mainViewModel.user.collectAsState()
 
     var selectedTribe by remember { mutableStateOf<Tribe?>(null) }
     var selectedEvent by remember { mutableStateOf<TribeWarEvent?>(null) }
@@ -43,6 +46,10 @@ fun AddScoreScreen(
 
     var showTribePicker by remember { mutableStateOf(false) }
     var showEventPicker by remember { mutableStateOf(false) }
+
+    val hasPermission = remember(user) {
+        user?.roleEnum?.isSuperAdmin == true || user?.email == "nathanleonard1127@gmail.com".trim()
+    }
 
     LaunchedEffect(tribes, initialTribeId) {
         if (selectedTribe == null && initialTribeId != null) {
@@ -147,6 +154,8 @@ fun AddScoreScreen(
 
                 Button(
                     onClick = {
+                        if (!hasPermission) return@Button
+
                         selectedTribe?.let {
                             viewModel.addPointsToTribe(it, points, reason, selectedEvent?.id, selectedEvent?.title)
                             onNavigateBack()
@@ -155,9 +164,13 @@ fun AddScoreScreen(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                     shape = RoundedCornerShape(28.dp),
-                    enabled = selectedTribe != null && reason.isNotBlank()
+                    enabled = selectedTribe != null && reason.isNotBlank() && hasPermission
                 ) {
-                    Text(text = "ADD SCORE", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                    Text(
+                        text = if (hasPermission) "ADD SCORE" else "UNAUTHORIZED",
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(140.dp))

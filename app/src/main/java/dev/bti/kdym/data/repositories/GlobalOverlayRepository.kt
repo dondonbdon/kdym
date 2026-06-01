@@ -11,7 +11,7 @@ class GlobalOverlayRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
     fun getGlobalOverlay(): Flow<GlobalOverlay?> {
-        return firestore.collection("globalOverlaysTest")
+        return firestore.collection("globalOverlays")
             .document("current")
             .snapshots()
             .map { snapshot ->
@@ -20,7 +20,7 @@ class GlobalOverlayRepository(
     }
 
     suspend fun updateGlobalOverlay(overlay: GlobalOverlay) {
-        firestore.collection("globalOverlaysTest")
+        firestore.collection("globalOverlays")
             .document("current")
             .set(overlay)
             .await()

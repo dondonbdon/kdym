@@ -37,7 +37,7 @@ fun TribeWarsAdminScreen(
     val tribes by viewModel.tribes.collectAsState()
     val tribeEvents by viewModel.tribeEvents.collectAsState()
     val user by mainViewModel.user.collectAsState()
-    val isAdmin = user?.hasCommandAccess == true
+    val isAdmin = user?.roleEnum?.canAccessCommand == true
 
     OutpourBackground {
         Column(

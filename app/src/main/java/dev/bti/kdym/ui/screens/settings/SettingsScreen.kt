@@ -43,6 +43,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,18 +67,65 @@ import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CircularProgressIndicator
+import dev.bti.kdym.data.models.UserRole
 
 @Composable
 fun SettingsScreen(
     onNavigateToProfile: () -> Unit,
-    onNavigateToNotificationPrefs: () -> Unit,
+    onNavigateToNotificationPreferences: () -> Unit,
     onNavigateToCommandHub: () -> Unit,
     onNavigateToChurches: () -> Unit,
     onNavigateToRequestAccess: () -> Unit,
+    onNavigateToModeration: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val user by viewModel.user.collectAsState()
+
+    var showReportDialog by remember { mutableStateOf(false) }
+
+    if (showReportDialog && user != null) {
+        dev.bti.kdym.ui.components.ReportMessageDialog(
+            message = dev.bti.kdym.data.models.GroupMessage(
+                id = "general_app_report",
+                text = "General App/Account Report",
+                senderName = user!!.displayName,
+                senderId = user!!.uid
+            ),
+            group = dev.bti.kdym.data.models.AppGroup(
+                id = "kdym_app",
+                name = "KDYM App"
+            ),
+            currentUser = user!!,
+            onDismiss = { showReportDialog = false },
+            onSubmit = { reason, details ->
+                viewModel.submitReport(
+                    groupId = "kdym_app",
+                    groupName = "KDYM App",
+                    message = dev.bti.kdym.data.models.GroupMessage(
+                        id = "general_app_report",
+                        text = "General App/Account Report",
+                        senderName = user!!.displayName,
+                        senderId = user!!.uid
+                    ),
+                    reporter = user!!,
+                    reason = reason,
+                    details = details,
+                    onSuccess = {
+                        showReportDialog = false
+                        viewModel.showFeedback("Report submitted successfully")
+                    }
+                )
+            }
+        )
+    }
 
     OutpourBackground {
         Column(
@@ -121,8 +171,13 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Command Center Card
-                if (user?.isAdmin == true) {
+                if (user?.roleEnum?.isSuperAdmin == true) {
                     CommandCenterCard(onClick = onNavigateToCommandHub)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // TODO: REMOVE BEFORE PRODUCTION
+                    DevMigrationCard(viewModel = viewModel)
+
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
@@ -160,7 +215,41 @@ fun SettingsScreen(
                             icon = Icons.Default.NotificationsActive,
                             title = "Notifications",
                             subtitle = "Choose the KDYM updates and reminders you want to receive.",
-                            onClick = onNavigateToNotificationPrefs
+                            onClick = onNavigateToNotificationPreferences
+                        )
+                    }
+                }
+
+                if (user?.isAdmin == true) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "SAFETY",
+                        color = Color(0xFFEF4444),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp,
+                        fontFamily = QuickSandFontFamily,
+                        modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                    )
+                    Text(
+                        text = "MODERATION",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily,
+                        modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)
+                    )
+
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = Color.Black.copy(0.3f),
+                        contentPadding = 0.dp
+                    ) {
+                        SettingsItem(
+                            icon = Icons.Default.Security,
+                            title = "Moderation Reports",
+                            subtitle = "Review and manage user-submitted reports and flagged content.",
+                            onClick = onNavigateToModeration
                         )
                     }
                 }
@@ -258,6 +347,14 @@ fun SettingsScreen(
                                     "https://kdym.org/community-guidelines".toUri()
                                 )
                                 context.startActivity(intent)
+                            }
+                        )
+                        SettingsItem(
+                            icon = Icons.Default.Campaign,
+                            title = "Report a Concern",
+                            subtitle = "Report inappropriate content, users, or other safety issues.",
+                            onClick = {
+                                showReportDialog = true
                             }
                         )
                     }
@@ -658,5 +755,153 @@ fun SettingsItem(
             tint = Color.White.copy(0.2f),
             modifier = Modifier.size(20.dp)
         )
+    }
+}
+
+@Composable
+fun DevMigrationCard(viewModel: MainViewModel) {
+    val coroutineScope = rememberCoroutineScope()
+    var isMigrating by remember { mutableStateOf(false) }
+
+    GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isMigrating) {
+                if (isMigrating) return@clickable
+                isMigrating = true
+                coroutineScope.launch {
+                    try {
+                        val db = FirebaseFirestore.getInstance()
+                        val snapshot = db.collection("users").get().await()
+                        var batch = db.batch()
+                        var operationsInBatch = 0
+                        var totalUpdated = 0
+
+                        val leaderRoles = listOf("tribeLeader", "groupLeader", "staff", "admin", "superAdmin")
+
+                        for (doc in snapshot.documents) {
+                            val role = doc.getString("role") ?: "public"
+                            val updates = mutableMapOf<String, Any>()
+
+                            // 1. Set required booleans
+                            updates["isAdmin"] = role == "admin" || role == "superAdmin"
+                            updates["isLeader"] = leaderRoles.contains(role)
+
+                            // 2. Name Splitting Logic (Only if missing)
+                            if (!doc.contains("firstName") || !doc.contains("lastName")) {
+                                val displayName = doc.getString("displayName")?.trim() ?: ""
+                                if (displayName.isNotBlank()) {
+                                    val parts = displayName.split("\\s+".toRegex())
+                                    updates["firstName"] = parts.first()
+                                    updates["lastName"] = if (parts.size > 1) {
+                                        parts.drop(1).joinToString(" ")
+                                    } else {
+                                        "" // Leave empty if they only provided one name
+                                    }
+                                }
+                            }
+
+                            // 3. Queue bloat fields for deletion
+                            val redundantFields = listOf(
+                                "canManageAnnouncements", "canManageApprovals", "canManageCampSettings",
+                                "canManageGroups", "canManagePoints", "canManageTribes",
+                                "hasApprovedCampAccess", "hasCommandAccess", "isPublic",
+                                "initials", "roleEnum", "statusEnum"
+                            )
+
+                            for (field in redundantFields) {
+                                if (doc.contains(field)) {
+                                    updates[field] = FieldValue.delete()
+                                }
+                            }
+
+                            if (updates.isNotEmpty()) {
+                                batch.update(doc.reference, updates)
+                                operationsInBatch++
+                                totalUpdated++
+                            }
+
+                            // Commit at 450 to respect Firestore's 500 operation limit
+                            if (operationsInBatch >= 450) {
+                                batch.commit().await()
+                                batch = db.batch()
+                                operationsInBatch = 0
+                            }
+
+                            // Inside your migration loop:
+                            if (doc.get("updatedAt") == null) {
+                                updates["updatedAt"] = FieldValue.serverTimestamp()
+                            }
+                            if (doc.get("createdAt") == null) {
+                                updates["createdAt"] = FieldValue.serverTimestamp()
+                            }
+                        }
+
+                        // Commit remainder
+                        if (operationsInBatch > 0) {
+                            batch.commit().await()
+                        }
+
+                        viewModel.showFeedback("Migrated $totalUpdated users!")
+                    } catch (e: Exception) {
+                        viewModel.showFeedback("Migration failed: ${e.message}")
+                    } finally {
+                        isMigrating = false
+                    }
+                }
+            },
+        cornerRadius = 24.dp,
+        backgroundColor = Color(0xFFEF4444).copy(0.2f),
+        borderColor = Color(0xFFEF4444).copy(0.4f)
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFFEF4444).copy(0.2f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isMigrating) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFEF4444),
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFFEF4444)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = "DEV TOOL",
+                    color = Color(0xFFEF4444),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                    fontFamily = QuickSandFontFamily
+                )
+                Text(
+                    text = if (isMigrating) "Migrating Database..." else "Run User Migration",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = QuickSandFontFamily
+                )
+                Text(
+                    text = "Fixes fields, trims bloat, and splits names.",
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    fontFamily = QuickSandFontFamily
+                )
+            }
+        }
     }
 }

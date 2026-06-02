@@ -46,6 +46,7 @@ import dev.bti.kdym.ui.App
 import dev.bti.kdym.ui.components.FeedbackBanner
 import dev.bti.kdym.ui.components.GlassNavigationBar
 import dev.bti.kdym.ui.screens.admin.*
+import dev.bti.kdym.ui.screens.admin.ModerationReportsScreen
 import dev.bti.kdym.ui.screens.common.PdfViewerScreen
 import dev.bti.kdym.ui.screens.events.EventDetailScreen
 import dev.bti.kdym.ui.screens.events.EventsScreen
@@ -334,7 +335,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
 
             // --- Command Center (Admin Only) ---
             composable("command") {
-                if (user?.hasCommandAccess == true) {
+                if (user?.roleEnum?.canAccessCommand == true) {
                     CommandCenterScreen(
                         onNavigateToHub = { navController.navigate("command_hub") },
                         onNavigateToAnnouncements = { navController.navigate("announcements") },
@@ -361,13 +362,22 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                         onNavigateToPostPlay = { },
                         onNavigateToUsers = { navController.navigate("admin_users") },
                         onNavigateToChurches = { navController.navigate("admin_churches") },
+                        onNavigateToModeration = { navController.navigate("moderation_reports") },
                         mainViewModel = mainViewModel,
                         viewModel = adminViewModel
                     )
                 }
             }
+            composable("moderation_reports") {
+                if (user?.isAdmin == true) {
+                    ModerationReportsScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = adminViewModel
+                    )
+                }
+            }
             composable("camp_settings") {
-                if (user?.canManageCampSettings == true) {
+                if (user?.roleEnum?.canManageCampSettings == true) {
                     CampSettingsScreen(
                         onNavigateBack = { navController.popBackStack() },
                         viewModel = adminViewModel
@@ -375,7 +385,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("approvals") {
-                if (user?.canManageApprovals == true) {
+                if (user?.roleEnum?.canManageApprovals == true) {
                     UsersScreen(
                         onNavigateBack = { navController.popBackStack() },
                         viewModel = adminViewModel
@@ -383,7 +393,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("admin_users") {
-                if (user?.hasCommandAccess == true) {
+                if (user?.roleEnum?.canAccessCommand == true) {
                     UsersScreen(
                         onNavigateBack = { navController.popBackStack() },
                         viewModel = adminViewModel
@@ -391,7 +401,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("admin_churches") {
-                if (user?.hasCommandAccess == true) {
+                if (user?.roleEnum?.canAccessCommand == true) {
                     ChurchesScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToChurchDetail = { churchId -> 
@@ -452,7 +462,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
 
             // --- Tribe Management ---
             composable("manage_tribes") {
-                if (user?.canManageTribes == true) {
+                if (user?.roleEnum?.canManageTribes == true) {
                     ManageTribesScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onCreateTribe = { navController.navigate("create_tribe") },
@@ -463,7 +473,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("tribe_detail/{tribeId}") { backStackEntry ->
-                if (user?.canManageTribes == true) {
+                if (user?.roleEnum?.canManageTribes == true) {
                     val tribeId =
                         backStackEntry.arguments?.getString("tribeId") ?: return@composable
                     TribeDetailsScreen(
@@ -476,7 +486,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("manage_tribe_people/{tribeId}") { backStackEntry ->
-                if (user?.canManageTribes == true) {
+                if (user?.roleEnum?.canManageTribes == true) {
                     val tribeId =
                         backStackEntry.arguments?.getString("tribeId") ?: return@composable
                     ManageTribePeopleScreen(
@@ -487,7 +497,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("create_tribe") {
-                if (user?.canManageTribes == true) {
+                if (user?.roleEnum?.canManageTribes == true) {
                     CreateTribeScreen(
                         onNavigateBack = { navController.popBackStack() },
                         viewModel = adminViewModel
@@ -495,7 +505,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("create_tribe?tribeId={tribeId}") { backStackEntry ->
-                if (user?.canManageTribes == true) {
+                if (user?.roleEnum?.canManageTribes == true) {
                     val tribeId = backStackEntry.arguments?.getString("tribeId")
                     CreateTribeScreen(
                         tribeId = tribeId,
@@ -505,9 +515,11 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
 
+            val canManagePoints = user?.roleEnum?.isSuperAdmin == true || user?.email == "nathanleonard1127@gmail.com".trim()
+
             // --- Tribe Wars Admin ---
             composable("tribe_wars_admin") {
-                if (user?.canManagePoints == true) {
+                if (canManagePoints) {
                     TribeWarsAdminScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToAddScore = { tribeId -> navController.navigate("add_score?tribeId=$tribeId") },
@@ -521,7 +533,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("add_score?tribeId={tribeId}") { backStackEntry ->
-                if (user?.canManagePoints == true) {
+                if (canManagePoints) {
                     val tribeId = backStackEntry.arguments?.getString("tribeId")
                     AddScoreScreen(
                         initialTribeId = tribeId,
@@ -532,7 +544,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("create_tribe_event?eventId={eventId}") { backStackEntry ->
-                if (user?.canManagePoints == true) {
+                if (canManagePoints) {
                     val eventId = backStackEntry.arguments?.getString("eventId")
                     CreateTribeEventScreen(
                         eventId = eventId,
@@ -542,7 +554,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 }
             }
             composable("create_tribe_event") {
-                if (user?.canManagePoints == true) {
+                if (canManagePoints) {
                     CreateTribeEventScreen(
                         onNavigateBack = { navController.popBackStack() },
                         viewModel = adminViewModel
@@ -552,7 +564,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
 
             // --- Group Management ---
             composable("manage_groups") {
-                if (user?.canManageGroups == true) {
+                if (user?.roleEnum?.canManageGroups == true) {
                     ManageGroupsScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onCreateGroup = { navController.navigate("create_group") },
@@ -589,7 +601,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 )
             }
             composable("create_group?groupId={groupId}") { backStackEntry ->
-                if (user?.canManageGroups == true) {
+                if (user?.roleEnum?.canManageGroups == true) {
                     val groupId = backStackEntry.arguments?.getString("groupId")
                     CreateGroupScreen(
                         groupId = groupId,
@@ -603,10 +615,11 @@ fun MainNavigation(mainViewModel: MainViewModel) {
             composable("settings") {
                 SettingsScreen(
                     onNavigateToProfile = { navController.navigate("profile") },
-                    onNavigateToNotificationPrefs = { navController.navigate("notification_prefs") },
+                    onNavigateToNotificationPreferences = { navController.navigate("notification_prefs") },
                     onNavigateToCommandHub = { navController.navigate("command_hub") },
                     onNavigateToChurches = { navController.navigate("admin_churches") },
                     onNavigateToRequestAccess = { navController.navigate("request_camp_access") },
+                    onNavigateToModeration = { navController.navigate("moderation_reports") },
                     viewModel = mainViewModel
                 )
             }
@@ -619,7 +632,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 )
             }
             composable("announcements") {
-                if (user?.canManageAnnouncements == true) {
+                if (user?.roleEnum?.canManageAnnouncements == true) {
                     AnnouncementsScreen(
                         onNavigateBack = { navController.popBackStack() },
                         mainViewModel = mainViewModel,

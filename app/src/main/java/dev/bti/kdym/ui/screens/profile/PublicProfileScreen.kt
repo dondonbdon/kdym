@@ -3,6 +3,8 @@ package dev.bti.kdym.ui.screens.profile
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +35,9 @@ import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.MainViewModel
 import androidx.core.net.toUri
+import androidx.compose.material.icons.filled.Report
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun PublicProfileScreen(
@@ -41,7 +46,13 @@ fun PublicProfileScreen(
     viewModel: MainViewModel
 ) {
     val viewedUser by viewModel.getUserProfile(userId).collectAsState(initial = null)
+    val currentUser by viewModel.user.collectAsState()
     val context = LocalContext.current
+    
+    var showReportDialog by remember { mutableStateOf(false) }
+    var reportReason by remember { mutableStateOf("") }
+    var reportDetails by remember { mutableStateOf("") }
+    var isSubmittingReport by remember { mutableStateOf(false) }
 
     OutpourBackground {
         Column(
@@ -168,7 +179,143 @@ fun PublicProfileScreen(
                         }
                     }
 
+                    if (user.uid != currentUser?.uid) {
+                        Spacer(modifier = Modifier.height(32.dp))
+                        Button(
+                            onClick = { showReportDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Black.copy(0.3f),
+                                contentColor = Color(0xFFEF4444)
+                            ),
+                            shape = RoundedCornerShape(24.dp),
+                            border = BorderStroke(1.dp, Color(0xFFEF4444).copy(0.3f))
+                        ) {
+                            Icon(imageVector = Icons.Default.Report, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "REPORT USER",
+                                fontWeight = FontWeight.Black,
+                                fontFamily = QuickSandFontFamily,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(140.dp))
+                }
+            }
+        }
+    }
+
+    if (showReportDialog && viewedUser != null && currentUser != null) {
+        Dialog(
+            onDismissRequest = { if (!isSubmittingReport) showReportDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.9f))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = Color(0xFF1A1A1A),
+                    cornerRadius = 32.dp
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text(
+                            text = "REPORT ${viewedUser!!.displayName.uppercase()}",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Help us understand what's happening. Your report is confidential.",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        val reasons = listOf("Harassment", "Spam", "Inappropriate Profile", "Other")
+                        reasons.forEach { reason ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { reportReason = reason }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = reportReason == reason,
+                                    onClick = { reportReason = reason },
+                                    colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFEF4444))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = reason, color = Color.White, fontFamily = QuickSandFontFamily)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        TextField(
+                            value = reportDetails,
+                            onValueChange = { reportDetails = it },
+                            placeholder = { Text("Additional details...", color = TextSecondary) },
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.White.copy(0.05f),
+                                unfocusedContainerColor = Color.White.copy(0.05f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            )
+                        )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Button(
+                                onClick = { showReportDialog = false },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(0.1f))
+                            ) {
+                                Text("CANCEL", fontFamily = QuickSandFontFamily)
+                            }
+                            Button(
+                                onClick = {
+                                    isSubmittingReport = true
+                                    viewModel.submitUserReport(
+                                        targetUser = viewedUser!!,
+                                        reporter = currentUser!!,
+                                        reason = reportReason,
+                                        details = reportDetails,
+                                        onSuccess = {
+                                            isSubmittingReport = false
+                                            showReportDialog = false
+                                            viewModel.showFeedback("User reported successfully.")
+                                        }
+                                    )
+                                },
+                                enabled = reportReason.isNotBlank() && !isSubmittingReport,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                            ) {
+                                if (isSubmittingReport) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                                } else {
+                                    Text("SUBMIT", fontFamily = QuickSandFontFamily)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

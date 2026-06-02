@@ -47,13 +47,6 @@ fun CommentThreadScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            ScreenHeader(
-                onNavigateBack = onNavigateBack,
-                icon = Icons.Default.ChatBubbleOutline,
-                title = "THREAD",
-                subtitle = "Post comments and responses."
-            )
-            
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)

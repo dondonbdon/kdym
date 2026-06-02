@@ -1,6 +1,7 @@
 package dev.bti.kdym.ui.components.home
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -8,20 +9,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import dev.bti.kdym.data.models.FeedPost
 import dev.bti.kdym.data.models.FeedPostPriority
 import dev.bti.kdym.ui.components.GlassCard
@@ -30,6 +34,8 @@ import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import java.text.SimpleDateFormat
 import dev.bti.kdym.R
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 
 @Composable
 fun FeedPostCard(
@@ -38,6 +44,16 @@ fun FeedPostCard(
     onReactionClick: (postId: String, reaction: String) -> Unit,
     onClick: () -> Unit = {}
 ) {
+    var selectedImageIndex by remember { mutableStateOf<Int?>(null) }
+
+    if (selectedImageIndex != null) {
+        ImagePagerDialog(
+            images = post.imageURLs,
+            initialPage = selectedImageIndex!!,
+            onDismiss = { selectedImageIndex = null }
+        )
+    }
+
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -128,6 +144,14 @@ fun FeedPostCard(
                 fontFamily = QuickSandFontFamily
             )
 
+            if (post.imageURLs.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                PostImageGrid(
+                    imageURLs = post.imageURLs,
+                    onImageClick = { index -> selectedImageIndex = index }
+                )
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Row(
@@ -198,6 +222,151 @@ fun FeedPostCard(
                     fontWeight = FontWeight.Bold,
                     fontFamily = QuickSandFontFamily
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun PostImageGrid(imageURLs: List<String>, onImageClick: (Int) -> Unit) {
+    val count = imageURLs.size
+    
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+    ) {
+        when (count) {
+            1 -> {
+                ImageItem(url = imageURLs[0], modifier = Modifier.aspectRatio(16/9f)) { onImageClick(0) }
+            }
+            2 -> {
+                Row(modifier = Modifier.height(200.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ImageItem(url = imageURLs[0], modifier = Modifier.weight(1f).fillMaxHeight()) { onImageClick(0) }
+                    ImageItem(url = imageURLs[1], modifier = Modifier.weight(1f).fillMaxHeight()) { onImageClick(1) }
+                }
+            }
+            3 -> {
+                Row(modifier = Modifier.height(200.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ImageItem(url = imageURLs[0], modifier = Modifier.weight(1f).fillMaxHeight()) { onImageClick(0) }
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ImageItem(url = imageURLs[1], modifier = Modifier.weight(1f).fillMaxWidth()) { onImageClick(1) }
+                        ImageItem(url = imageURLs[2], modifier = Modifier.weight(1f).fillMaxWidth()) { onImageClick(2) }
+                    }
+                }
+            }
+            else -> {
+                // 4 or more
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(modifier = Modifier.height(140.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ImageItem(url = imageURLs[0], modifier = Modifier.weight(1f).fillMaxHeight()) { onImageClick(0) }
+                        ImageItem(url = imageURLs[1], modifier = Modifier.weight(1f).fillMaxHeight()) { onImageClick(1) }
+                    }
+                    Row(modifier = Modifier.height(140.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ImageItem(url = imageURLs[2], modifier = Modifier.weight(1f).fillMaxHeight()) { onImageClick(2) }
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            ImageItem(url = imageURLs[3], modifier = Modifier.fillMaxSize()) { onImageClick(3) }
+                            if (count > 4) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.5f))
+                                        .clickable { onImageClick(3) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "+${count - 3}",
+                                        color = Color.White,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = QuickSandFontFamily
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ImageItem(url: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    AsyncImage(
+        model = url,
+        contentDescription = null,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() },
+        contentScale = ContentScale.Crop
+    )
+}
+
+@Composable
+fun ImagePagerDialog(
+    images: List<String>,
+    initialPage: Int,
+    onDismiss: () -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { images.size }, initialPage = initialPage)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    AsyncImage(
+                        model = images[page],
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+
+            // Close button
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(16.dp)
+                    .align(Alignment.TopEnd)
+                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+            }
+            
+            // Indicator
+            if (images.size > 1) {
+                Row(
+                    Modifier
+                        .height(50.dp)
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(images.size) { iteration ->
+                        val color = if (pagerState.currentPage == iteration) Color.White else Color.White.copy(alpha = 0.5f)
+                        Box(
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .size(8.dp)
+                        )
+                    }
+                }
             }
         }
     }

@@ -32,7 +32,8 @@ class AdminViewModel @Inject constructor(
     private val churchRepository: ChurchRepository,
     private val eventRepository: EventRepository,
     authRepository: AuthRepository,
-    private val globalOverlayRepository: GlobalOverlayRepository
+    private val globalOverlayRepository: GlobalOverlayRepository,
+    private val moderationRepository: ModerationRepository
 ) : ViewModel() {
 
     // --- STATE STREAMS ---
@@ -92,6 +93,11 @@ class AdminViewModel @Inject constructor(
     /** All main calendar events. */
     val allEvents: StateFlow<List<KDYMEvent>> =
         eventRepository.getAllPublishedEvents()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** All moderation reports. */
+    val moderationReports: StateFlow<List<ModerationReport>> =
+        moderationRepository.getModerationReports()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // --- OPERATIONS ---
@@ -470,6 +476,15 @@ class AdminViewModel @Inject constructor(
             globalOverlayRepository.updateGlobalOverlay(overlay)
         } catch (e: Exception) {
             Log.e("AdminViewModel", "updateGlobalOverlay failed", e)
+        }
+    }
+
+    /** Updates the status of a moderation report. */
+    fun updateReportStatus(reportId: String, status: String) = viewModelScope.launch {
+        try {
+            moderationRepository.updateReportStatus(reportId, status)
+        } catch (e: Exception) {
+            Log.e("AdminViewModel", "updateReportStatus failed", e)
         }
     }
 

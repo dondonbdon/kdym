@@ -71,6 +71,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Poll
 import androidx.compose.material.icons.filled.Reply
+import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -119,10 +120,13 @@ import dev.bti.kdym.ui.components.MappedIcon
 import dev.bti.kdym.ui.components.OutpourBackground
 import dev.bti.kdym.ui.components.PollBubble
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
+import dev.bti.kdym.ui.components.ReportMessageDialog
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.ui.theme.toColor
 import dev.bti.kdym.viewmodels.AdminViewModel
 import dev.bti.kdym.viewmodels.GroupsViewModel
+import dev.bti.kdym.viewmodels.MainViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -198,7 +202,8 @@ fun ChatScreen(
     onNavigateToProfile: (String) -> Unit,
     onNavigateToPdf: (String) -> Unit,
     viewModel: GroupsViewModel,
-    adminViewModel: AdminViewModel
+    adminViewModel: AdminViewModel,
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val groups by viewModel.groups.collectAsState()
     val tribes by adminViewModel.tribes.collectAsState()
@@ -272,6 +277,7 @@ fun ChatScreen(
 
     var selectedMessage by remember { mutableStateOf<GroupMessage?>(null) }
     var showOptionsMenu by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
     var showPlusMenu by remember { mutableStateOf(false) }
     var showMediaGallery by remember { mutableStateOf(false) }
     var initialMediaIndex by remember { mutableIntStateOf(0) }
@@ -284,7 +290,7 @@ fun ChatScreen(
     }
 
     val isLeader = remember(group, viewModel.currentUserId) {
-        group?.leaderIds?.contains(viewModel.currentUserId) == true || adminViewModel.allUsers.value.find { it.uid == viewModel.currentUserId }?.hasCommandAccess == true
+        group?.leaderIds?.contains(viewModel.currentUserId) == true || adminViewModel.allUsers.value.find { it.uid == viewModel.currentUserId }?.roleEnum?.canAccessCommand == true
     }
 
     val canPost = remember(group, isLeader) {
@@ -468,6 +474,10 @@ fun ChatScreen(
                     showOptionsMenu = false
                     selectedMessage = null
                 },
+                onReport = {
+                    showReportDialog = true
+                    showOptionsMenu = false
+                },
                 onReaction = { emoji ->
                     selectedMessage?.let { msg ->
                         scope.launch {
@@ -480,6 +490,34 @@ fun ChatScreen(
                 onNavigateToPdf = onNavigateToPdf,
                 adminViewModel = adminViewModel
             )
+        }
+
+        if (showReportDialog && selectedMessage != null && group != null) {
+            val currentGroup = group
+            val currentUser by mainViewModel.user.collectAsState()
+            currentUser?.let { user ->
+                ReportMessageDialog(
+                    message = selectedMessage!!,
+                    group = currentGroup,
+                    currentUser = user,
+                    onDismiss = { showReportDialog = false },
+                    onSubmit = { reason, details ->
+                        mainViewModel.submitReport(
+                            groupId = currentGroup.id,
+                            groupName = currentGroup.name,
+                            message = selectedMessage!!,
+                            reporter = user,
+                            reason = reason,
+                            details = details,
+                            onSuccess = {
+                                showReportDialog = false
+                                selectedMessage = null
+                                mainViewModel.showFeedback("Report submitted. Thank you for keeping KDYM safe.")
+                            }
+                        )
+                    }
+                )
+            }
         }
 
 /*
@@ -1744,6 +1782,7 @@ fun MessageOptionsOverlay(
     visible: Boolean,
     onDismiss: () -> Unit,
     onReply: () -> Unit,
+    onReport: () -> Unit,
     onReaction: (String) -> Unit,
     onNavigateToPdf: (String) -> Unit,
     adminViewModel: AdminViewModel
@@ -1832,6 +1871,7 @@ fun MessageOptionsOverlay(
                     MessageContextMenu(
                         themeColor = themeColor,
                         onReply = onReply,
+                        onReport = onReport,
                         onDismiss = onDismiss
                     )
                 }
@@ -1945,7 +1985,12 @@ fun ReactionSelectionBar(onReaction: (String) -> Unit) {
 }
 
 @Composable
-fun MessageContextMenu(themeColor: Color, onReply: () -> Unit, onDismiss: () -> Unit) {
+fun MessageContextMenu(
+    themeColor: Color,
+    onReply: () -> Unit,
+    onReport: () -> Unit,
+    onDismiss: () -> Unit
+) {
     Surface(
         color = Color(0xFF1A1A1A),
         shape = RoundedCornerShape(24.dp),
@@ -1955,6 +2000,11 @@ fun MessageContextMenu(themeColor: Color, onReply: () -> Unit, onDismiss: () -> 
         Column(modifier = Modifier.padding(8.dp)) {
             OptionMenuItem(icon = Icons.AutoMirrored.Filled.Reply, label = "Reply", color = themeColor) { onReply() }
             OptionMenuItem(icon = Icons.Default.ContentCopy, label = "Copy") { onDismiss() }
+            OptionMenuItem(
+                icon = Icons.Default.Report,
+                label = "Report",
+                color = Color(0xFFEF4444)
+            ) { onReport() }
             OptionMenuItem(
                 icon = Icons.Default.Delete,
                 label = "Delete",

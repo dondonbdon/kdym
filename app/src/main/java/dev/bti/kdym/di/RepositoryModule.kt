@@ -66,4 +66,8 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideGlobalOverlayRepository(firestore: FirebaseFirestore): GlobalOverlayRepository = GlobalOverlayRepository(firestore)
+
+    @Provides
+    @Singleton
+    fun provideModerationRepository(firestore: FirebaseFirestore): ModerationRepository = ModerationRepository(firestore)
 }

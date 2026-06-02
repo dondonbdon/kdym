@@ -5,6 +5,7 @@ import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.PropertyName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import dev.bti.kdym.data.local.serializers.TimestampSerializer
 
 /**
@@ -15,6 +16,8 @@ import dev.bti.kdym.data.local.serializers.TimestampSerializer
 @IgnoreExtraProperties
 data class AppUser(
     val uid: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
     val displayName: String = "",
     val username: String = "",
     val email: String = "",
@@ -37,7 +40,7 @@ data class AppUser(
     val requestedCampId: String? = null,
     val requestedRole: String? = null,
     @Serializable(with = TimestampSerializer::class)
-    val requestedAt: Timestamp? = null,
+    val requestedAt: Timestamp? = Timestamp.now(),
 
     val guessedTribe: String? = null,
 
@@ -49,78 +52,51 @@ data class AppUser(
     val notificationPreferences: NotificationPreferences? = NotificationPreferences(),
 
     @Serializable(with = TimestampSerializer::class)
-    val createdAt: Timestamp? = null,
+    val createdAt: Timestamp? = Timestamp.now(),
     @Serializable(with = TimestampSerializer::class)
-    val updatedAt: Timestamp? = null,
+    val updatedAt: Timestamp? = Timestamp.now(),
     @Serializable(with = TimestampSerializer::class)
-    val lastActiveAt: Timestamp? = null,
+    val lastActiveAt: Timestamp? = Timestamp.now(),
+
     var phoneVerified: Boolean = false,
     var emailVerified: Boolean = false,
     var reportCount: Int = 0,
 ) {
-    /**
-     * Helper to get the strongly-typed role.
-     */
+    // =========================================================================
+    // IN-MEMORY HELPERS (Strictly excluded from Firestore to prevent bloat)
+    // =========================================================================
+
+    @get:Exclude
     val roleEnum: UserRole get() = UserRole.fromString(role)
 
-    /**
-     * Helper to get the strongly-typed access status.
-     */
+    @get:Exclude
     val statusEnum: AccessStatus get() = AccessStatus.fromString(accessStatus)
 
-    /**
-     * Role-based booleans (Phasing out explicit stored flags)
-     */
-    @get:Exclude
-    val isAdmin: Boolean get() = roleEnum.isAdmin
-    @get:Exclude
-    val isLeader: Boolean get() = roleEnum.isLeader
     @get:Exclude
     val isPublic: Boolean get() = roleEnum.isPublic
 
-    /**
-     * Generates initials from the display name for use in placeholders.
-     */
-    val initials: String
-        get() {
-            val parts = displayName.split(" ").filter { it.isNotBlank() }
-            return if (parts.size >= 2) {
-                "${parts[0].take(1)}${parts[1].take(1)}".uppercase()
-            } else if (parts.isNotEmpty()) {
-                parts[0].take(2).uppercase()
-            } else {
-                "KD"
-            }
+    @get:Exclude
+    val hasApprovedCampAccess: Boolean get() = accessStatus == "approved" && roleEnum.canAccessCampContent
+
+    // =========================================================================
+    // PERSISTED FLAGS (Derived from role for integrity, but stored for iOS)
+    // =========================================================================
+
+    @get:PropertyName("isAdmin")
+    val isAdmin: Boolean get() = roleEnum.isAdmin
+
+    @get:PropertyName("isLeader")
+    val isLeader: Boolean get() = roleEnum.isLeader
+
+    @get:Exclude
+    val initials: String get() {
+        val parts = displayName.split(" ").filter { it.isNotBlank() }
+        return if (parts.size >= 2) {
+            "${parts[0].take(1)}${parts[1].take(1)}".uppercase()
+        } else if (parts.isNotEmpty()) {
+            parts[0].take(2).uppercase()
+        } else {
+            "KD"
         }
-
-    /**
-     * Whether the user is fully approved and can view protected camp content.
-     */
-    val hasApprovedCampAccess: Boolean
-        get() = accessStatus == "approved" && roleEnum.canAccessCampContent
-
-    // =========================================================================
-    // PERMISSION HELPERS: Bridging Enum Roles and Boolean Flags
-    // =========================================================================
-
-    val hasCommandAccess: Boolean
-        get() = roleEnum.canAccessCommand
-
-    val canManageCampSettings: Boolean
-        get() = roleEnum.canManageCampSettings
-
-    val canManageApprovals: Boolean
-        get() = roleEnum.canManageApprovals
-
-    val canManageTribes: Boolean
-        get() = roleEnum.canManageTribes
-
-    val canManagePoints: Boolean
-        get() = roleEnum.canManagePoints
-
-    val canManageAnnouncements: Boolean
-        get() = roleEnum.canManageAnnouncements
-
-    val canManageGroups: Boolean
-        get() = roleEnum.canManageGroups
+    }
 }

@@ -66,8 +66,7 @@ enum class UserRole(val title: String) {
     val canManageTribes: Boolean
         get() = isLeader
 
-    val canManagePoints: Boolean
-        get() =  isTribeLeader
+
 
     val canManageAnnouncements: Boolean
         get() = isLeader

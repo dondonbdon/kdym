@@ -96,7 +96,7 @@ data class AppGroup(
      */
     fun canUserPost(user: AppUser?): Boolean {
         if (user == null) return false
-        if (user.hasCommandAccess) return true
+        if (user.roleEnum.canAccessCommand) return true
         if (!chatEnabled) return false
         if (leaderIds.contains(user.uid)) return true
 

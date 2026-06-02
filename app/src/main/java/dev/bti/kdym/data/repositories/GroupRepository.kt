@@ -13,6 +13,7 @@ import dev.bti.kdym.data.models.GroupMessage
 import dev.bti.kdym.data.models.GroupAttachment
 import dev.bti.kdym.data.models.GroupJoinRequest
 import dev.bti.kdym.data.models.MessageReaction
+import dev.bti.kdym.data.models.ModerationReport
 import dev.bti.kdym.data.models.Poll
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
@@ -88,6 +89,8 @@ class GroupRepository(
             result
         }
     }
+
+
 
     /**
      * Returns a real-time stream of all active groups in the system.

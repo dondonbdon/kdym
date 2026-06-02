@@ -70,7 +70,7 @@ fun GroupInfoScreen(
     val isLeader = remember(
         group,
         user
-    ) { group?.leaderIds?.contains(user?.uid) == true || user?.hasCommandAccess == true }
+    ) { group?.leaderIds?.contains(user?.uid) == true || user?.roleEnum?.canAccessCommand == true }
 
     var draftGroup by remember(group) { mutableStateOf(group) }
     var selectedTab by remember { mutableStateOf("INFO") }

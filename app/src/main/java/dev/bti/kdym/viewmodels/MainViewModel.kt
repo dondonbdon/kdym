@@ -1,6 +1,7 @@
 package dev.bti.kdym.viewmodels
 
 import android.net.Uri
+import androidx.annotation.Keep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +41,7 @@ class MainViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     announcementRepository: AnnouncementRepository,
     private val storageRepository: StorageRepository,
+    private val moderationRepository: ModerationRepository,
     churchRepository: ChurchRepository,
     private val campRepository: CampRepository,
     private val playRepository: PlayRepository,
@@ -306,13 +308,18 @@ class MainViewModel @Inject constructor(
                 if (fbUser != null) {
                     val newUser = AppUser(
                         uid = fbUser.uid,
-                        displayName = "$firstName $lastName",
+                        firstName = firstName.trim(),
+                        lastName = lastName.trim(),
+                        displayName = "$firstName $lastName".trim(),
                         username = username,
                         email = email,
                         phoneNumber = phoneNumber,
                         churchId = churchId,
                         churchName = churchName,
-                        createdAt = Timestamp.now()
+
+                        createdAt = Timestamp.now(),
+                        updatedAt = Timestamp.now(),
+                        lastActiveAt = Timestamp.now()
                     )
                     userRepository.createUser(newUser)
                     _authLoading.value = false
@@ -728,6 +735,65 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun submitReport(
+        groupId: String,
+        groupName: String,
+        message: GroupMessage,
+        reporter: AppUser,
+        reason: String,
+        details: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val report = ModerationReport(
+                    details = details,
+                    groupId = groupId,
+                    groupName = groupName,
+                    messageId = message.id,
+                    messageSenderId = message.senderId,
+                    messageSenderName = message.senderName,
+                    messageText = message.text.ifBlank { "[Attachment/Media]" },
+                    reason = reason,
+                    reporterId = reporter.uid,
+                    reporterName = reporter.displayName
+                )
+
+                moderationRepository.submitModerationReport(report)
+                onSuccess()
+            } catch (e: Exception) {
+                // Handle error (e.g., show feedback)
+            }
+        }
+    }
+
+    fun submitUserReport(
+        targetUser: AppUser,
+        reporter: AppUser,
+        reason: String,
+        details: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val report = ModerationReport(
+                    type = "user",
+                    details = details,
+                    messageSenderId = targetUser.uid,
+                    messageSenderName = targetUser.displayName,
+                    reason = reason,
+                    reporterId = reporter.uid,
+                    reporterName = reporter.displayName
+                )
+
+                moderationRepository.submitModerationReport(report)
+                onSuccess()
+            } catch (e: Exception) {
+                showFeedback("Failed to submit report", isError = true)
+            }
+        }
+    }
+
     val allEvents: StateFlow<List<KDYMEvent>> = eventRepository.getAllPublishedEvents()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -749,6 +815,7 @@ class MainViewModel @Inject constructor(
 
 
 
+@Keep
 @Serializable
 data class EventRSVP(
     val userId: String = "",

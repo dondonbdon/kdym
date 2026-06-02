@@ -106,12 +106,12 @@ data class FeedPost(
      */
     fun canUserSee(user: AppUser?): Boolean {
         if (isExpired || !isPublished) return false
-        if (user?.hasCommandAccess == true) return true
+        if (user?.roleEnum?.canAccessCommand == true) return true
         return when (audience) {
             FeedPostAudience.everyone -> true
             FeedPostAudience.campers -> user?.hasApprovedCampAccess == true
-            FeedPostAudience.leaders -> user?.isLeader == true || user?.hasCommandAccess == true
-            FeedPostAudience.admins -> user?.hasCommandAccess == true
+            FeedPostAudience.leaders -> user?.isLeader == true || user?.roleEnum?.canAccessCommand == true
+            FeedPostAudience.admins -> user?.roleEnum?.canAccessCommand == true
             FeedPostAudience.tribe -> user?.tribeId == targetTribeId
             FeedPostAudience.group -> user?.groupIds?.contains(targetGroupId) == true
         }

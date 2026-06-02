@@ -40,7 +40,7 @@ fun AnnouncementsScreen(
 ) {
     val announcements by mainViewModel.announcements.collectAsState()
     val user by mainViewModel.user.collectAsState()
-    val isAdmin = user?.hasCommandAccess == true
+    val isAdmin = user?.roleEnum?.canAccessCommand == true
     
     var showSendDialog by remember { mutableStateOf(false) }
     var editingAnnouncement by remember { mutableStateOf<Announcement?>(null) }

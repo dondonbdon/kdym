@@ -243,7 +243,7 @@ fun LiveUpdatesView(
                             Spacer(modifier = Modifier.weight(1f))
 
                             // Admin-only plus button
-                            if (user?.isAdmin == true) {
+                            if (user?.roleEnum?.isAdmin == true) {
                                 IconButton(
                                     onClick = onCreatePostClick,
                                     modifier = Modifier.size(36.dp)

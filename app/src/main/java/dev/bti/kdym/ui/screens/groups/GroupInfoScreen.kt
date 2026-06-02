@@ -1170,7 +1170,7 @@ fun GroupMembersTab(
                                         }
                                     } else {
                                         IconButton(onClick = {
-                                            group?.let { g ->
+                                            group.let { g ->
                                                 // 1. Create the new group state
                                                 val updatedGroup = g.copy(
                                                     memberIds = (g.memberIds + user.uid).distinct(),

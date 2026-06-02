@@ -175,7 +175,7 @@ fun TribeWarsAdminScreen(
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "UPCOMING",
+                        text = "EVENTS",
                         color = Color(0xFFEF4444),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
@@ -235,7 +235,7 @@ fun TribeWarsAdminScreen(
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "LOG",
+                        text = "ACTIVITY",
                         color = Color(0xFFEF4444),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Black,

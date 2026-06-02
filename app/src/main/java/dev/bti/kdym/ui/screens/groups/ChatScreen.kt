@@ -1,5 +1,6 @@
 package dev.bti.kdym.ui.screens.groups
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -128,9 +129,14 @@ import java.util.Locale
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.core.net.toUri
+
 /**
  * Main Chat Screen for group messaging.
- * Supports real-time updates, image attachments, replies, reactions, and polls.
  */
 val OtherMessageColor = Color(0xFF1E1E1E)
 
@@ -190,6 +196,7 @@ fun ChatScreen(
     onNavigateToInfo: (String) -> Unit,
     onNavigateToCreatePoll: (String) -> Unit,
     onNavigateToProfile: (String) -> Unit,
+    onNavigateToPdf: (String) -> Unit,
     viewModel: GroupsViewModel,
     adminViewModel: AdminViewModel
 ) {
@@ -292,6 +299,11 @@ fun ChatScreen(
         group?.chatEnabled == true && (!group.pollsRestrictedToLeaders || isLeader)
     }
 
+    // Typing Status Logic
+    val typingNames = remember(group, viewModel.currentUserId) {
+        group?.typingUserNames?.filterKeys { it != viewModel.currentUserId }?.values?.toList() ?: emptyList()
+    }
+
     val latestMessageId = messages.firstOrNull()?.id
     LaunchedEffect(latestMessageId) {
         if (isAtBottom && latestMessageId != null) {
@@ -315,6 +327,7 @@ fun ChatScreen(
                 .statusBarsPadding()) {
                 ChatHeader(
                     group = group,
+                    typingNames = typingNames,
                     onNavigateBack = onNavigateBack,
                     onInfoClick = { onNavigateToInfo(groupId) })
 
@@ -331,6 +344,7 @@ fun ChatScreen(
                         group = group,
                         currentUserId = viewModel.currentUserId,
                         adminViewModel = adminViewModel,
+                        typingNames = typingNames,
                         onMessageOptions = { message ->
                             selectedMessage = message
                             showOptionsMenu = true
@@ -348,6 +362,7 @@ fun ChatScreen(
                             showMediaGallery = true
                         },
                         onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToPdf = onNavigateToPdf,
                         onReactionClick = { },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -462,6 +477,7 @@ fun ChatScreen(
                     showOptionsMenu = false
                     selectedMessage = null
                 },
+                onNavigateToPdf = onNavigateToPdf,
                 adminViewModel = adminViewModel
             )
         }
@@ -484,14 +500,18 @@ fun MessageList(
     group: AppGroup?,
     currentUserId: String?,
     adminViewModel: AdminViewModel,
+    typingNames: List<String>,
     onMessageOptions: (GroupMessage) -> Unit,
     onSwipeToReply: (GroupMessage) -> Unit,
     onReplyClick: (String) -> Unit,
     onMediaClick: (GroupMessage, Int) -> Unit,
     onNavigateToProfile: (String) -> Unit,
+    onNavigateToPdf: (String) -> Unit,
     onReactionClick: (GroupMessage) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val processedItems = remember(messages) { processMessages(messages) }
+
     LazyColumn(
         state = listState,
         modifier = modifier
@@ -501,48 +521,56 @@ fun MessageList(
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        itemsIndexed(messages, key = { _, it -> it.id }) { index, message ->
-            val prevMessage = messages.getOrNull(index + 1)
-            val nextMessage = messages.getOrNull(index - 1)
+        item {
+            TypingIndicator(typingNames = typingNames, themeColor = themeColor)
+        }
 
-            val isFirstInGroup = prevMessage == null || prevMessage.senderId != message.senderId ||
-                    (message.createdAt?.seconds ?: 0) - (prevMessage.createdAt?.seconds ?: 0) > 300
-            val isLastInGroup = nextMessage == null || nextMessage.senderId != message.senderId ||
-                    (nextMessage.createdAt?.seconds ?: 0) - (message.createdAt?.seconds ?: 0) > 300
+        items(processedItems, key = { it.key }) { item ->
+            when (item) {
+                is ChatListItem.MessageItem -> {
+                    val message = item.message
+                    val index = messages.indexOf(message)
+                    val prevMessage = messages.getOrNull(index + 1)
+                    val nextMessage = messages.getOrNull(index - 1)
 
-            // Date Separator logic
-            val showDateHeader = prevMessage == null || !isSameDay(message.createdAt, prevMessage.createdAt)
-            
-            val userEmoji = optimisticReactions[message.id]
-            val finalReactions = if (userEmoji != null) {
-                val updated = message.reactionCounts.toMutableMap()
-                updated[userEmoji] = (updated[userEmoji] ?: 0) + 1
-                updated
-            } else {
-                message.reactionCounts
-            }
+                    val isFirstInGroup = prevMessage == null || prevMessage.senderId != message.senderId ||
+                            prevMessage.isSystemMessage ||
+                            (message.createdAt?.seconds ?: 0) - (prevMessage.createdAt?.seconds ?: 0) > 300
+                    val isLastInGroup = nextMessage == null || nextMessage.senderId != message.senderId ||
+                            nextMessage.isSystemMessage ||
+                            (nextMessage.createdAt?.seconds ?: 0) - (message.createdAt?.seconds ?: 0) > 300
 
-            MessageBubble(
-                message = message.copy(reactionCounts = finalReactions),
-                isOwnMessage = message.senderId == currentUserId,
-                themeColor = themeColor,
-                isFirstInGroup = isFirstInGroup,
-                isLastInGroup = isLastInGroup,
-                adminViewModel = adminViewModel,
-                onLongPress = { onMessageOptions(message) },
-                onSwipeToReply = { onSwipeToReply(message) },
-                onReplyClick = onReplyClick,
-                onMediaClick = { mediaIndex -> onMediaClick(message, mediaIndex) },
-                onNavigateToProfile = onNavigateToProfile,
-                onReactionClick = { onReactionClick(message) }
-            )
+                    val userEmoji = optimisticReactions[message.id]
+                    val finalReactions = if (userEmoji != null) {
+                        val updated = message.reactionCounts.toMutableMap()
+                        updated[userEmoji] = (updated[userEmoji] ?: 0) + 1
+                        updated
+                    } else {
+                        message.reactionCounts
+                    }
 
-            if (showDateHeader) {
-                DateHeader(timestamp = message.createdAt)
-            }
-
-            if (isLastInGroup) {
-                Spacer(modifier = Modifier.height(8.dp))
+                    MessageBubble(
+                        message = message.copy(reactionCounts = finalReactions),
+                        isOwnMessage = message.senderId == currentUserId,
+                        themeColor = themeColor,
+                        isFirstInGroup = isFirstInGroup,
+                        isLastInGroup = isLastInGroup,
+                        adminViewModel = adminViewModel,
+                        onLongPress = { onMessageOptions(message) },
+                        onSwipeToReply = { onSwipeToReply(message) },
+                        onReplyClick = onReplyClick,
+                        onMediaClick = { mediaIndex -> onMediaClick(message, mediaIndex) },
+                        onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToPdf = onNavigateToPdf,
+                        onReactionClick = { onReactionClick(message) }
+                    )
+                }
+                is ChatListItem.SystemGroupItem -> {
+                    SystemMessageBubble(text = item.text)
+                }
+                is ChatListItem.DateHeaderItem -> {
+                    DateHeader(timestamp = item.timestamp)
+                }
             }
         }
     }
@@ -585,7 +613,16 @@ fun DateHeader(timestamp: com.google.firebase.Timestamp?) {
 }
 
 @Composable
-fun ChatHeader(group: AppGroup?, onNavigateBack: () -> Unit, onInfoClick: () -> Unit) {
+fun ChatHeader(group: AppGroup?, typingNames: List<String>, onNavigateBack: () -> Unit, onInfoClick: () -> Unit) {
+    val typingText = remember(typingNames) {
+        when {
+            typingNames.isEmpty() -> null
+            typingNames.size == 1 -> "${typingNames[0]} is typing..."
+            typingNames.size == 2 -> "${typingNames[0]} and ${typingNames[1]} are typing..."
+            else -> "${typingNames[0]} and ${typingNames.size - 1} others typing..."
+        }
+    }
+
     Surface(
         color = Color.Transparent,
         modifier = Modifier
@@ -638,6 +675,18 @@ fun ChatHeader(group: AppGroup?, onNavigateBack: () -> Unit, onInfoClick: () -> 
                             tint = Color.White,
                             modifier = Modifier.size(16.dp)
                         )
+
+                        // Cool Active Indicator
+                        if (typingNames.isNotEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .align(Alignment.BottomEnd)
+                                    .offset(x = 2.dp, y = 2.dp)
+                                    .background(Color(0xFF22C55E), CircleShape)
+                                    .border(2.dp, Color(0xFF111111), CircleShape)
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(horizontalAlignment = Alignment.Start) {
@@ -648,7 +697,17 @@ fun ChatHeader(group: AppGroup?, onNavigateBack: () -> Unit, onInfoClick: () -> 
                             fontWeight = FontWeight.Black,
                             fontFamily = QuickSandFontFamily
                         )
-                        Text(
+                        
+                        typingText?.let {
+                            Text(
+                                text = it.uppercase(),
+                                color = Color(0xFF22C55E),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = QuickSandFontFamily,
+                                letterSpacing = 1.sp
+                            )
+                        } ?: Text(
                             text = "${group?.type?.title?.uppercase() ?: "TRIBE"} • ${group?.memberCount ?: 0} MEMBERS",
                             color = TextSecondary,
                             fontSize = 9.sp,
@@ -690,6 +749,7 @@ fun MessageBubble(
     onReplyClick: (String) -> Unit,
     onMediaClick: (Int) -> Unit,
     onNavigateToProfile: (String) -> Unit,
+    onNavigateToPdf: (String) -> Unit,
     onReactionClick: () -> Unit
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -804,7 +864,8 @@ fun MessageBubble(
                                 attachments = message.attachments,
                                 isOwnMessage = isOwnMessage,
                                 themeColor = themeColor,
-                                onMediaClick = onMediaClick
+                                onMediaClick = onMediaClick,
+                                onNavigateToPdf = onNavigateToPdf
                             )
                         }
 
@@ -860,13 +921,15 @@ fun MessageBubble(
     }
 }
 
+@SuppressLint("UseKtx")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AttachmentGrid(
     attachments: List<GroupAttachment>,
     isOwnMessage: Boolean,
     themeColor: Color,
-    onMediaClick: (Int) -> Unit
+    onMediaClick: (Int) -> Unit,
+    onNavigateToPdf: (String) -> Unit
 ) {
     val imageAttachments =
         attachments.filter { it.type == GroupAttachmentType.image || it.type == GroupAttachmentType.video }
@@ -908,7 +971,10 @@ fun AttachmentGrid(
                                             .aspectRatio(if (imageAttachments.size == 1) 16 / 9f else 1f)
                                             .clip(RoundedCornerShape(8.dp))
                                             .background(Color.White.copy(0.05f))
-                                            .clickable { onMediaClick(index) },
+                                            .clickable { 
+                                                val globalIndex = attachments.indexOf(attachment)
+                                                if (globalIndex != -1) onMediaClick(globalIndex)
+                                            },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         AsyncImage(
@@ -967,16 +1033,33 @@ fun AttachmentGrid(
 
         fileAttachments.forEach { attachment ->
             val context = LocalContext.current
+            val extension = attachment.fileName?.substringAfterLast('.', "")?.lowercase()
+
+            val isImageFile = extension in listOf("jpg", "jpeg", "png", "gif", "webp", "heic")
+            val isPdf = extension == "pdf"
+
             Surface(
                 color = bgColor,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(attachment.url))
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
+                        when {
+                            isImageFile -> {
+                                val index = attachments.indexOf(attachment)
+                                if (index != -1) onMediaClick(index)
+                            }
+                            isPdf -> {
+                                onNavigateToPdf(attachment.url)
+                            }
+                            else -> {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, attachment.url.toUri())
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+
+                                }
+                            }
                         }
                     }
             ) {
@@ -1025,7 +1108,7 @@ fun MessageTextSurface(
 ) {
     val cornerRadius = 24.dp
     val uriHandler = LocalUriHandler.current
-    
+
     val brush = if (isOwnMessage) {
         Brush.linearGradient(
             colors = listOf(themeColor.copy(alpha = 0.8f), themeColor),
@@ -1034,12 +1117,16 @@ fun MessageTextSurface(
         )
     } else null
 
+    // 1. Update the AnnotatedString builder to use addLink()
     val annotatedString = buildAnnotatedString {
         append(text)
         val matcher = Patterns.WEB_URL.matcher(text)
         while (matcher.find()) {
             val start = matcher.start()
             val end = matcher.end()
+            val rawUrl = text.substring(start, end)
+            val url = if (!rawUrl.startsWith("http")) "https://$rawUrl" else rawUrl
+
             addStyle(
                 style = SpanStyle(
                     color = if (isOwnMessage) Color.White else Color(0xFF22D3EE),
@@ -1082,7 +1169,8 @@ fun MessageTextSurface(
                 )
                 .zIndex(1f)
         ) {
-            ClickableText(
+            // 2. Replace ClickableText with the standard Text composable
+            Text(
                 text = annotatedString,
                 style = LocalTextStyle.current.copy(
                     color = Color.White,
@@ -1090,14 +1178,7 @@ fun MessageTextSurface(
                     fontFamily = QuickSandFontFamily,
                     lineHeight = 20.sp
                 ),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                onClick = { offset ->
-                    annotatedString.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            val url = if (!annotation.item.startsWith("http")) "https://${annotation.item}" else annotation.item
-                            try { uriHandler.openUri(url) } catch (e: Exception) {}
-                        }
-                }
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
             )
         }
 
@@ -1664,6 +1745,7 @@ fun MessageOptionsOverlay(
     onDismiss: () -> Unit,
     onReply: () -> Unit,
     onReaction: (String) -> Unit,
+    onNavigateToPdf: (String) -> Unit,
     adminViewModel: AdminViewModel
 ) {
     // Use themeColor for some elements if desired, or just ignore if not needed
@@ -1728,7 +1810,8 @@ fun MessageOptionsOverlay(
                                     attachments = message.attachments,
                                     isOwnMessage = false, // Simplified look
                                     themeColor = themeColor,
-                                    onMediaClick = {}
+                                    onMediaClick = {},
+                                    onNavigateToPdf = onNavigateToPdf
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
@@ -1953,4 +2036,184 @@ private fun isYesterday(t: com.google.firebase.Timestamp): Boolean {
     val cal2 = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }
     return cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR) &&
             cal1.get(java.util.Calendar.DAY_OF_YEAR) == cal2.get(java.util.Calendar.DAY_OF_YEAR)
+}
+
+sealed class ChatListItem(val key: String) {
+    data class DateHeaderItem(val id: String, val timestamp: com.google.firebase.Timestamp) : ChatListItem(id)
+    data class MessageItem(val message: GroupMessage) : ChatListItem(message.id)
+    data class SystemGroupItem(val id: String, val text: String) : ChatListItem(id)
+}
+
+fun processMessages(messages: List<GroupMessage>): List<ChatListItem> {
+    if (messages.isEmpty()) return emptyList()
+
+    val items = mutableListOf<ChatListItem>()
+    var i = 0
+    while (i < messages.size) {
+        val current = messages[i]
+
+        if (current.isSystemMessage) {
+            val systemGroup = mutableListOf<GroupMessage>()
+            systemGroup.add(current)
+            var j = i + 1
+            // Group consecutive system messages from the same day
+            while (j < messages.size && messages[j].isSystemMessage && isSameDay(messages[j].createdAt, current.createdAt)) {
+                systemGroup.add(messages[j])
+                j++
+            }
+
+            val combinedText = combineSystemMessages(systemGroup)
+            items.add(ChatListItem.SystemGroupItem("system_${current.id}", combinedText))
+            i = j
+        } else {
+            items.add(ChatListItem.MessageItem(current))
+            i++
+        }
+
+        // Add Date Header if it's the start of a day (since it's reverseLayout, "next" is actually older)
+        val next = messages.getOrNull(i)
+        if (next == null || !isSameDay(current.createdAt, next.createdAt)) {
+            current.createdAt?.let {
+                items.add(ChatListItem.DateHeaderItem("date_${it.seconds}", it))
+            }
+        }
+    }
+    return items
+}
+
+fun combineSystemMessages(messages: List<GroupMessage>): String {
+    val addedRegex = "(.+) was added to the group\\.".toRegex()
+    val leftRegex = "(.+) left the group\\.".toRegex()
+
+    val addedNames = mutableListOf<String>()
+    val leftNames = mutableListOf<String>()
+    val others = mutableListOf<String>()
+
+    // Reverse because input messages are [Latest ... Oldest]
+    messages.reversed().forEach { msg ->
+        val addedMatch = addedRegex.matchEntire(msg.text)
+        val leftMatch = leftRegex.matchEntire(msg.text)
+
+        when {
+            addedMatch != null -> addedNames.add(addedMatch.groupValues[1])
+            leftMatch != null -> leftNames.add(leftMatch.groupValues[1])
+            else -> others.add(msg.text)
+        }
+    }
+
+    val results = mutableListOf<String>()
+
+    if (addedNames.isNotEmpty()) {
+        val namesText = formatNamesList(addedNames)
+        results.add("$namesText ${if (addedNames.size > 1) "were added to the group" else "was added to the group"}")
+    }
+    if (leftNames.isNotEmpty()) {
+        val namesText = formatNamesList(leftNames)
+        results.add("$namesText left the group")
+    }
+    results.addAll(others)
+
+    return results.joinToString(" • ")
+}
+
+fun formatNamesList(names: List<String>): String {
+    return when {
+        names.size == 1 -> names[0]
+        names.size == 2 -> "${names[0]} and ${names[1]}"
+        else -> "${names.dropLast(1).joinToString(", ")} and ${names.last()}"
+    }
+}
+
+@Composable
+fun SystemMessageBubble(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 40.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text.uppercase(),
+            color = TextSecondary.copy(alpha = 0.6f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            fontFamily = QuickSandFontFamily,
+            letterSpacing = 1.sp,
+            lineHeight = 16.sp
+        )
+    }
+}
+
+@Composable
+fun TypingIndicator(
+    typingNames: List<String>,
+    themeColor: Color
+) {
+    if (typingNames.isEmpty()) return
+
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Surface(
+            color = OtherMessageColor,
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color.White.copy(0.05f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ThreeDotsAnimation(themeColor)
+                Text(
+                    text = "TYPING",
+                    color = themeColor,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ThreeDotsAnimation(color: Color) {
+    val infiniteTransition = rememberInfiniteTransition(label = "dots")
+
+    @Composable
+    fun Dot(delay: Int) {
+        val scale by infiniteTransition.animateFloat(
+            initialValue = 0.4f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(600, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+                initialStartOffset = StartOffset(delay)
+            ),
+            label = "dot_scale"
+        )
+        Box(
+            modifier = Modifier
+                .size(4.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = scale
+                }
+                .background(color, CircleShape)
+        )
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Dot(0)
+        Dot(200)
+        Dot(400)
+    }
 }

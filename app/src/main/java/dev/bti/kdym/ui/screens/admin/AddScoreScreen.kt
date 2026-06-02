@@ -68,8 +68,7 @@ fun AddScoreScreen(
             ScreenHeader(
                 onNavigateBack = onNavigateBack,
                 icon = Icons.Default.AddBusiness,
-                title = "ADD",
-                subtitle = "Record new points for a tribe."
+                title = "ADD"
             )
 
             Column(

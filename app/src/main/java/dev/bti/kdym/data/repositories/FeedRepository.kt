@@ -26,7 +26,7 @@ class FeedRepository(
      * Prioritizes local cache while syncing with network updates.
      */
     fun getLiveUpdates(): Flow<List<FeedPost>> {
-        val networkFlow = firestore.collection("feedPosts")
+        return firestore.collection("feedPosts")
             .whereEqualTo("isPublished", true)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .snapshots()
@@ -36,18 +36,6 @@ class FeedRepository(
                         ?.copy(id = doc.id)
                 }
             }
-            .onEach { posts ->
-                feedPostDao?.insertPosts(posts.map { it.toEntity() })
-            }
-
-        return if (feedPostDao != null) {
-            combine(
-                feedPostDao.getFeedPosts().map { entities -> entities.map { it.toModel() } },
-                networkFlow
-            ) { cached, network -> network.ifEmpty { cached } }
-        } else {
-            networkFlow
-        }
     }
 
     /**

@@ -46,6 +46,7 @@ import dev.bti.kdym.ui.App
 import dev.bti.kdym.ui.components.FeedbackBanner
 import dev.bti.kdym.ui.components.GlassNavigationBar
 import dev.bti.kdym.ui.screens.admin.*
+import dev.bti.kdym.ui.screens.common.PdfViewerScreen
 import dev.bti.kdym.ui.screens.events.EventDetailScreen
 import dev.bti.kdym.ui.screens.events.EventsScreen
 import dev.bti.kdym.ui.screens.groups.*
@@ -243,6 +244,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 HomeScreen(
                     onNavigateToComments = { postId -> navController.navigate("comments/$postId") },
                     onNavigateToRequestAccess = { navController.navigate("request_camp_access") },
+                    onCreatePostClick = { navController.navigate("create_home_post") }, 
                     viewModel = mainViewModel
                 )
             }
@@ -277,7 +279,14 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     onNavigateToTribeWars = { navController.navigate("tribe_wars_admin") },
                     onExploreGroups = { navController.navigate("explore_groups") },
                     onCreateGroup = { navController.navigate("create_group") },
-                    onAddScore = { navController.navigate("tribe_wars_admin") },
+                    onAddScore = { tribeId ->
+                        if (tribeId != null) navController.navigate("add_score?tribeId=$tribeId")
+                        else navController.navigate("add_score")
+                    },
+                    onCreateTribeEvent = { eventId ->
+                        if (eventId != null) navController.navigate("create_tribe_event?eventId=$eventId")
+                        else navController.navigate("create_tribe_event")
+                    },
                     mainViewModel = mainViewModel,
                     viewModel = groupsViewModel,
                     adminViewModel = adminViewModel
@@ -299,8 +308,16 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     onNavigateToInfo = { id -> navController.navigate("group_info/$id") },
                     onNavigateToCreatePoll = { id -> navController.navigate("create_poll?groupId=$id") },
                     onNavigateToProfile = { userId -> navController.navigate("public_profile/$userId") },
+                    onNavigateToPdf = { url -> navController.navigate("pdf_viewer/${Uri.encode(url)}") },
                     viewModel = groupsViewModel,
                     adminViewModel = adminViewModel
+                )
+            }
+            composable("pdf_viewer/{url}") { backStackEntry ->
+                val url = backStackEntry.arguments?.getString("url") ?: return@composable
+                PdfViewerScreen(
+                    url = url,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable("group_info/{groupId}") { backStackEntry ->

@@ -81,6 +81,9 @@ data class AppGroup(
     var archivedUserIds: List<String> = emptyList(),
     var lastReadAtByUser: Map<String, Timestamp> = emptyMap(),
     var lastReadMessageIds: Map<String, String> = emptyMap(),
+    val typingUserIds: List<String> = emptyList(),
+    val typingUserNames: Map<String, String> = emptyMap(),
+    val typingUpdatedAt: Timestamp? = null,
 ) {
     /**
      * Total number of unique members (including leaders).

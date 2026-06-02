@@ -34,12 +34,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddBusiness
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Diversity3
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
@@ -108,7 +112,8 @@ fun CommunityScreen(
     onNavigateToTribeWars: () -> Unit,
     onExploreGroups: () -> Unit,
     onCreateGroup: () -> Unit,
-    onAddScore: () -> Unit = {},
+    onAddScore: (String?) -> Unit = {},
+    onCreateTribeEvent: (String?) -> Unit = {},
     viewModel: GroupsViewModel = hiltViewModel(
         viewModelStoreOwner = LocalViewModelStoreOwner.current!!,
         key = "groups_vm_community"
@@ -242,7 +247,7 @@ fun CommunityScreen(
 
 
 
-                        val shouldShowMenu = selectedTab == "GROUPS" || (selectedTab == "TRIBE_WARS" && isSuperAdminOrAllowedEmail)
+                        val shouldShowMenu = selectedTab == "GROUPS"
 
                         if (shouldShowMenu) {
                             var showMenu by remember { mutableStateOf(false) }
@@ -279,7 +284,7 @@ fun CommunityScreen(
                                             DropdownMenuItem(
                                                 text = { Text("Add Score", color = Color.White) },
                                                 leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                                                onClick = { showMenu = false; onAddScore() }
+                                                onClick = { showMenu = false; onAddScore(null) }
                                             )
                                         }
                                     }
@@ -297,19 +302,23 @@ fun CommunityScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        CommunityTabButton(
+                        CommunityTabCard(
+                            label = "TRIBE WARS",
+                            subtitle = if (isPastReveal) "REVEALED + SCOREBOARD" else "REVEALS JUNE 1",
+                            icon = Icons.Default.Flag,
+                            isSelected = selectedTab == "TRIBE_WARS",
+                            showLiveBadge = isCampMode,
+                            modifier = Modifier.weight(1f),
+                            activeColor = Color(0xFF22D3EE)
+                        ) { viewModel.selectTab("TRIBE_WARS") }
+
+                        CommunityTabCard(
                             label = "GROUPS",
-                            icon = Icons.Default.Group,
+                            subtitle = "MESSAGES & GROUPS",
+                            icon = Icons.Default.Forum,
                             isSelected = selectedTab == "GROUPS",
                             modifier = Modifier.weight(1f)
                         ) { viewModel.selectTab("GROUPS") }
-
-                        CommunityTabButton(
-                            label = "TRIBE WARS",
-                            icon = Icons.Default.Flag,
-                            isSelected = selectedTab == "TRIBE_WARS",
-                            modifier = Modifier.weight(1f)
-                        ) { viewModel.selectTab("TRIBE_WARS") }
                     }
                 }
 
@@ -324,7 +333,9 @@ fun CommunityScreen(
                                     isPastReveal = isPastReveal,
                                     isCampMode = isCampMode,
                                     targetZonedDateTime = targetZonedDateTime,
-                                    onRevealClick = { showManualReveal = true }
+                                    onRevealClick = { showManualReveal = true },
+                                    onAddScore = onAddScore,
+                                    onCreateEvent = onCreateTribeEvent
                                 )
                             } else GroupsTab(
                                 onNavigateToChat = onNavigateToChat,
@@ -376,39 +387,69 @@ fun CommunityScreen(
 }
 
 @Composable
-fun CommunityTabButton(
+fun CommunityTabCard(
     label: String,
+    subtitle: String,
     icon: ImageVector,
     isSelected: Boolean,
+    showLiveBadge: Boolean = false,
+    activeColor: Color = Color.White,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = modifier
-            .height(48.dp)
+            .height(80.dp)
             .clickable { onClick() },
-        color = if (isSelected) Color.White else Color.White.copy(0.05f),
-        shape = RoundedCornerShape(24.dp)
+        color = if (isSelected) activeColor.copy(0.2f) else Color.White.copy(0.05f),
+        shape = RoundedCornerShape(24.dp),
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, activeColor.copy(0.3f)) else null
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isSelected) Color.Black else Color.White.copy(0.6f),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isSelected) activeColor else Color.White.copy(0.6f),
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = label,
+                    color = if (isSelected) activeColor else Color.White.copy(0.6f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily,
+                    letterSpacing = 1.sp
+                )
+                if (showLiveBadge) {
+                    Box(
+                        modifier = Modifier
+                            .background(Color.White.copy(0.2f), CircleShape)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "LIVE",
+                            color = Color.White,
+                            fontSize = 7.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = label,
-                color = if (isSelected) Color.Black else Color.White.copy(0.6f),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
+                text = subtitle,
+                color = if (isSelected) Color.White else Color.White.copy(0.4f),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
                 fontFamily = QuickSandFontFamily,
-                letterSpacing = 1.sp
+                letterSpacing = 0.5.sp
             )
         }
     }
@@ -437,7 +478,12 @@ fun GroupsTab(
                         (group.type == AppGroupType.tribe && group.tribeId == user!!.tribeId)
             }
         } else {
-            allGroups
+            allGroups.filter { group ->
+                group.leaderIds.contains(uid) ||
+                        group.createdBy == uid ||
+                        group.memberIds.contains(uid) ||
+                        (group.type == AppGroupType.tribe && group.tribeId == user!!.tribeId)
+            }
         }
     }
 
@@ -544,14 +590,20 @@ fun TribeWarsTab(
     isPastReveal: Boolean,
     isCampMode: Boolean,
     targetZonedDateTime: ZonedDateTime,
-    onRevealClick: () -> Unit
+    onRevealClick: () -> Unit,
+    onAddScore: (String?) -> Unit = {},
+    onCreateEvent: (String?) -> Unit = {}
 ) {
     val tribes by viewModel.tribes.collectAsState()
+    val tribeEvents by viewModel.tribeEvents.collectAsState()
     val user by mainViewModel.user.collectAsState()
     val guessedTribe by mainViewModel.guessedTribe.collectAsState()
     val tribeRevealShown by mainViewModel.tribeRevealShown.collectAsState()
 
     val isAssigned = user?.tribeId != null
+    val isAdmin = remember(user) {
+        user?.roleEnum?.isSuperAdmin == true || user?.email == "nathanleonard1127@gmail.com".trim()
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -581,13 +633,13 @@ fun TribeWarsTab(
             } else {
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Column {
                             Text(
-                                text = "LIVE SCOREBOARD",
+                                text = "SCOREBOARD",
                                 color = Color(0xFFEF4444),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Black,
@@ -605,7 +657,185 @@ fun TribeWarsTab(
                 }
 
                 items(tribes, key = { it.id }) { tribe ->
-                    TribeSimpleScoreCard(tribe)
+                    TribeSimpleScoreCard(
+                        tribe = tribe,
+                        isAdmin = isAdmin,
+                        onAddScore = { onAddScore(tribe.id) }
+                    )
+                }
+
+                if (isAdmin) {
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "ADMIN",
+                            color = Color(0xFFEF4444),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp,
+                            fontFamily = QuickSandFontFamily
+                        )
+                        Text(
+                            text = "SCORE CONTROLS",
+                            color = Color.White,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = QuickSandFontFamily
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            ScoreActionButton(
+                                icon = Icons.Default.Flag,
+                                label = "CREATE EVENT",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onCreateEvent(null) }
+                            )
+                            ScoreActionButton(
+                                icon = Icons.Default.AddBusiness,
+                                label = "ADD POINTS",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onAddScore(null) }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        GlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.finalizeScoreboard() },
+                            cornerRadius = 32.dp
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Campaign,
+                                    contentDescription = null,
+                                    tint = Color(0xFFEAB308)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "FINALIZE SCOREBOARD",
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = QuickSandFontFamily
+                                    )
+                                    Text(
+                                        text = "Publish current rankings to the Home feed.",
+                                        color = TextSecondary,
+                                        fontSize = 12.sp,
+                                        fontFamily = QuickSandFontFamily
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(0.3f)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Tribe Events Section
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "EVENTS",
+                        color = Color(0xFFEF4444),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Text(
+                        text = "TRIBE EVENTS",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                if (tribeEvents.isEmpty()) {
+                    item {
+                        GlassCard(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "No active events",
+                                color = TextSecondary,
+                                modifier = Modifier.padding(16.dp),
+                                fontFamily = QuickSandFontFamily
+                            )
+                        }
+                    }
+                } else {
+                    items(tribeEvents) { event ->
+                        GlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onCreateEvent(event.id) },
+                            cornerRadius = 24.dp
+                        ) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier.size(40.dp).background(Color(0xFFEF4444).copy(0.1f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(imageVector = Icons.Default.Flag, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = event.title.uppercase(), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                                    Text(text = "${event.maxPoints} PTS AVAILABLE", color = TextSecondary, fontSize = 12.sp, fontFamily = QuickSandFontFamily)
+                                }
+                                if (isAdmin) {
+                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Recent Scores Section (Placeholder)
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "ACTIVITY",
+                        color = Color(0xFFEF4444),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Text(
+                        text = "RECENT SCORES",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = QuickSandFontFamily
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    GlassCard(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Score history will appear here.",
+                            color = TextSecondary,
+                            modifier = Modifier.padding(16.dp),
+                            fontFamily = QuickSandFontFamily
+                        )
+                    }
                 }
             }
         }
@@ -1058,7 +1288,7 @@ fun InfoRow(icon: ImageVector, title: String, desc: String) {
 }
 
 @Composable
-fun TribeSimpleScoreCard(tribe: Tribe) {
+fun TribeSimpleScoreCard(tribe: Tribe, isAdmin: Boolean = false, onAddScore: () -> Unit = {}) {
     val color = remember(tribe.colorHex) {
         try {
             Color(tribe.colorHex.toColorInt())
@@ -1073,14 +1303,22 @@ fun TribeSimpleScoreCard(tribe: Tribe) {
         borderColor = color.copy(alpha = 0.2f)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "#${tribe.rank}",
-                color = if (tribe.rank == 1) Color(0xFFEAB308) else Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = QuickSandFontFamily,
-                modifier = Modifier.width(40.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(Color.White.copy(0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "#${tribe.rank}",
+                    color = if (tribe.rank == 1) Color(0xFFEAB308) else Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = QuickSandFontFamily
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             Box(
                 modifier = Modifier
@@ -1106,9 +1344,9 @@ fun TribeSimpleScoreCard(tribe: Tribe) {
                     fontFamily = QuickSandFontFamily
                 )
                 Text(
-                    text = "${tribe.memberCount} members",
+                    text = if (tribe.rank == 1) "The Official Tribe Leaderboard Leader" else "${tribe.memberCount} members",
                     color = TextSecondary,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontFamily = QuickSandFontFamily
                 )
             }
@@ -1117,18 +1355,64 @@ fun TribeSimpleScoreCard(tribe: Tribe) {
                 Text(
                     text = tribe.totalPoints.toString(),
                     color = Color.White,
-                    fontSize = 28.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = QuickSandFontFamily
                 )
                 Text(
                     text = "PTS",
                     color = TextSecondary,
-                    fontSize = 10.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = QuickSandFontFamily
                 )
             }
+
+            if (isAdmin) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Surface(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onAddScore() },
+                    color = Color.White,
+                    shape = CircleShape
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Score",
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ScoreActionButton(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    GlassCard(modifier = modifier, cornerRadius = 24.dp, backgroundColor = Color.White.copy(0.05f)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color(0xFF22D3EE),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = label,
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = QuickSandFontFamily
+            )
         }
     }
 }

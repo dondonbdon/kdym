@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -82,6 +83,7 @@ import androidx.core.graphics.toColorInt
 fun HomeScreen(
     onNavigateToComments: (String) -> Unit,
     onNavigateToRequestAccess: () -> Unit,
+    onCreatePostClick: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val camps = dev.bti.kdym.data.models.HARDCODED_CAMPS
@@ -101,6 +103,7 @@ fun HomeScreen(
                 onPostClick = onNavigateToComments,
                 onReactionClick = { postId, reaction -> viewModel.toggleReaction(postId, reaction) },
                 onChangePhoto = {},
+                onCreatePostClick = onCreatePostClick,
                 getUserReaction = { viewModel.getUserReaction(it) },
                 viewModel = viewModel
             )
@@ -155,6 +158,7 @@ fun LiveUpdatesView(
     onPostClick: (String) -> Unit,
     onReactionClick: (String, String) -> Unit,
     onChangePhoto: () -> Unit,
+    onCreatePostClick: () -> Unit,
     getUserReaction: (String) -> kotlinx.coroutines.flow.Flow<String?>,
     viewModel: MainViewModel
 ) {
@@ -233,6 +237,23 @@ fun LiveUpdatesView(
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = QuickSandFontFamily
                                 )
+                            }
+
+                            // Pushes the button to the far right
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            // Admin-only plus button
+                            if (user?.isAdmin == true) {
+                                IconButton(
+                                    onClick = onCreatePostClick,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Create Home Post",
+                                        tint = Color.White
+                                    )
+                                }
                             }
                         }
                     }

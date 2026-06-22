@@ -1,13 +1,20 @@
 package dev.bti.kdym.ui.screens.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import dev.bti.kdym.data.models.AppGroup
+import dev.bti.kdym.data.models.GroupMessage
 import dev.bti.kdym.ui.components.*
 import dev.bti.kdym.ui.components.home.FeedPostCard
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
@@ -31,6 +40,7 @@ import java.text.SimpleDateFormat
 fun CommentThreadScreen(
     postId: String,
     onNavigateBack: () -> Unit,
+    onNavigateToEditPost: (String) -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val updates by viewModel.liveUpdates.collectAsState()
@@ -38,8 +48,37 @@ fun CommentThreadScreen(
     val comments by viewModel.getComments(postId).collectAsState(initial = emptyList())
     val userReaction by viewModel.getUserReaction(post.id)
         .collectAsState(initial = null)
+    val user by viewModel.user.collectAsState()
     
     var commentText by remember { mutableStateOf("") }
+    var showMenu by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
+
+    if (showReportDialog && user != null) {
+        ReportMessageDialog(
+            message = GroupMessage(
+                id = post.id,
+                text = post.body,
+                senderName = post.createdByName ?: "Unknown",
+                senderId = post.createdBy ?: ""
+            ),
+            group = AppGroup(name = "Home Feed"),
+            currentUser = user!!,
+            onDismiss = { showReportDialog = false },
+            onSubmit = { reason, details ->
+                viewModel.submitPostReport(
+                    post = post,
+                    reporter = user!!,
+                    reason = reason,
+                    details = details,
+                    onSuccess = {
+                        showReportDialog = false
+                        viewModel.showFeedback("Report submitted successfully")
+                    }
+                )
+            }
+        )
+    }
 
     OutpourBackground {
         Column(
@@ -47,6 +86,65 @@ fun CommentThreadScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
+            // Custom Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.background(Color.White.copy(0.1f), CircleShape)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+
+                Box {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.background(Color.White.copy(0.1f), CircleShape)
+                    ) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Menu", tint = Color.White)
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(Color(0xFF1F2937))
+                    ) {
+                        if (user?.roleEnum?.isAdmin == true) {
+                            DropdownMenuItem(
+                                text = { Text("Edit Post", color = Color.White, fontFamily = QuickSandFontFamily) },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color.White) },
+                                onClick = {
+                                    showMenu = false
+                                    onNavigateToEditPost(post.id)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete Post", color = Color(0xFFEF4444), fontFamily = QuickSandFontFamily) },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFEF4444)) },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.deletePost(post.id)
+                                    onNavigateBack()
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Report Post", color = Color.White, fontFamily = QuickSandFontFamily) },
+                            leadingIcon = { Icon(Icons.Default.Report, contentDescription = null, tint = Color.White) },
+                            onClick = {
+                                showMenu = false
+                                showReportDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)

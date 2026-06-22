@@ -48,6 +48,15 @@ class FeedRepository(
         ref.set(post.copy(id = ref.id)).await()
     }
 
+    suspend fun deletePost(postId: String) {
+        firestore.collection("feedPosts").document(postId).delete().await()
+    }
+
+    suspend fun updatePost(post: FeedPost) {
+        if (post.id.isBlank()) return
+        firestore.collection("feedPosts").document(post.id).set(post).await()
+    }
+
     /**
      * Adds a comment to a specific feed post.
      * Uses a transaction to increment the post's comment count atomicity.

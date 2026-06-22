@@ -325,7 +325,7 @@ class GroupsViewModel @Inject constructor(
             try {
 
                 val currentUserDoc = userRepository.getUser(uid).firstOrNull()
-                val freshName = currentUserDoc?.displayName ?: auth.currentUser?.displayName ?: "KDYM Member"
+                val freshName = group.name
                 val userEmail = currentUserDoc?.email ?: auth.currentUser?.email ?: ""
 
                 val request = GroupJoinRequest(

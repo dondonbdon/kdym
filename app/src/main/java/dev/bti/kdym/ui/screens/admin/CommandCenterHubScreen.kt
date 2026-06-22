@@ -216,18 +216,6 @@ fun CommandCenterHubScreen(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MinistryToolCard(
-                        icon = Icons.Default.Security,
-                        iconColor = Color(0xFFEF4444),
-                        title = "MODERATION",
-                        subtitle = "Reports and flagged content",
-                        onClick = onNavigateToModeration,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                }
 
                 Spacer(modifier = Modifier.height(32.dp))
 

@@ -550,6 +550,17 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun deletePost(postId: String) {
+        viewModelScope.launch {
+            try {
+                feedRepository.deletePost(postId)
+                showFeedback("Post deleted successfully")
+            } catch (e: Exception) {
+                showFeedback("Failed to delete post")
+            }
+        }
+    }
+
     fun deletePlayItem(itemId: String) {
         val uid = firebaseUser.value?.uid ?: return
         viewModelScope.launch {
@@ -763,6 +774,35 @@ class MainViewModel @Inject constructor(
                 onSuccess()
             } catch (e: Exception) {
                 // Handle error (e.g., show feedback)
+            }
+        }
+    }
+
+    fun submitPostReport(
+        post: FeedPost,
+        reporter: AppUser,
+        reason: String,
+        details: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val report = ModerationReport(
+                    details = details,
+                    messageId = post.id,
+                    messageSenderId = post.createdBy ?: "unknown",
+                    messageSenderName = post.createdByName ?: "Unknown",
+                    messageText = post.title + ": " + post.body,
+                    reason = reason,
+                    reporterId = reporter.uid,
+                    reporterName = reporter.displayName,
+                    type = "feedPost"
+                )
+
+                moderationRepository.submitModerationReport(report)
+                onSuccess()
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }

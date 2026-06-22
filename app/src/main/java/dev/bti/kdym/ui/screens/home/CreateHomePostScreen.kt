@@ -1,8 +1,10 @@
 package dev.bti.kdym.ui.screens.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,39 +19,67 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.Timestamp
+import dev.bti.kdym.data.models.FeedPost
+import dev.bti.kdym.data.models.FeedPostAudience
+import dev.bti.kdym.data.models.FeedPostPriority
 import dev.bti.kdym.ui.components.*
 import dev.bti.kdym.ui.components.admin.PickerBottomSheet
 import dev.bti.kdym.ui.theme.QuickSandFontFamily
 import dev.bti.kdym.ui.theme.TextSecondary
 import dev.bti.kdym.viewmodels.AdminViewModel
+import java.util.Locale
 
 @Composable
 fun CreateHomePostScreen(
+    postId: String? = null,
     onNavigateBack: () -> Unit,
     adminViewModel: AdminViewModel
 ) {
+    val updates by adminViewModel.liveUpdates.collectAsState()
     val tribes by adminViewModel.tribes.collectAsState()
     val groups by adminViewModel.groups.collectAsState()
 
-    var title by remember { mutableStateOf("") }
-    var body by remember { mutableStateOf("") }
+    val existingPost = remember(postId, updates) { updates.find { it.id == postId } }
+
+    var title by remember(existingPost) { mutableStateOf(existingPost?.title ?: "") }
+    var body by remember(existingPost) { mutableStateOf(existingPost?.body ?: "") }
     
     val audiences = listOf("Everyone", "Campers", "Leaders", "Admins", "Specific Tribe", "Specific Group")
-    var selectedAudience by remember { mutableStateOf(audiences[0]) }
+    var selectedAudience by remember(existingPost) { 
+        mutableStateOf(
+            existingPost?.audience?.let {
+                when(it) {
+                    FeedPostAudience.everyone -> "Everyone"
+                    FeedPostAudience.campers -> "Campers"
+                    FeedPostAudience.leaders -> "Leaders"
+                    FeedPostAudience.admins -> "Admins"
+                    FeedPostAudience.tribe -> "Specific Tribe"
+                    FeedPostAudience.group -> "Specific Group"
+                }
+            } ?: audiences[0]
+        ) 
+    }
     
     val postTypes = listOf("Normal", "Important", "Schedule", "Urgent", "Link", "Vote")
-    var selectedPostType by remember { mutableStateOf(postTypes[0]) }
+    var selectedPostType by remember(existingPost) { 
+        mutableStateOf(
+            existingPost?.priority?.let {
+                it.name.lowercase().replaceFirstChar { char -> if (char.isLowerCase()) char.titlecase(Locale.getDefault()) else char.toString() }
+            } ?: postTypes[0]
+        ) 
+    }
     
-    var selectedTribeId by remember { mutableStateOf<String?>(null) }
-    var selectedGroupId by remember { mutableStateOf<String?>(null) }
+    var selectedTribeId by remember(existingPost) { mutableStateOf(existingPost?.targetTribeId) }
+    var selectedGroupId by remember(existingPost) { mutableStateOf(existingPost?.targetGroupId) }
     
     var showAudiencePicker by remember { mutableStateOf(false) }
     var showTypePicker by remember { mutableStateOf(false) }
     var showTribePicker by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }
     
-    var linkTitle by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("") }
+    var linkTitle by remember(existingPost) { mutableStateOf(existingPost?.linkTitle ?: "") }
+    var url by remember(existingPost) { mutableStateOf(existingPost?.linkURL ?: "") }
 
     OutpourBackground {
         Column(
@@ -57,7 +87,7 @@ fun CreateHomePostScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            // New Back Button Style
+            // Header with Back Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -96,7 +126,7 @@ fun CreateHomePostScreen(
             ) {
                 Column {
                     Text(
-                        text = "CREATE",
+                        text = if (postId == null) "CREATE" else "EDIT",
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
@@ -240,53 +270,48 @@ fun CreateHomePostScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                Text(
-                    text = "OPTIONAL",
-                    color = Color(0xFFEF4444),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    fontFamily = QuickSandFontFamily
-                )
-                Text(
-                    text = "IMAGES",
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = QuickSandFontFamily
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Surface(
-                    onClick = { /* Pick Image */ },
-                    color = Color.White.copy(0.05f),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth().height(120.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color.White.copy(0.4f), modifier = Modifier.size(32.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "ADD IMAGES", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(40.dp))
-
                 Button(
                     onClick = {
-                        adminViewModel.createHomePost(
-                            title = title,
-                            body = body,
-                            audience = selectedAudience,
-                            priority = selectedPostType,
-                            linkTitle = linkTitle,
-                            linkURL = url,
-                            targetTribeId = selectedTribeId,
-                            targetGroupId = selectedGroupId
-                        )
+                        if (postId == null) {
+                            adminViewModel.createHomePost(
+                                title = title,
+                                body = body,
+                                audience = selectedAudience,
+                                priority = selectedPostType,
+                                linkTitle = linkTitle,
+                                linkURL = url,
+                                targetTribeId = selectedTribeId,
+                                targetGroupId = selectedGroupId
+                            )
+                        } else {
+                            existingPost?.let {
+                                adminViewModel.updateHomePost(it.copy(
+                                    title = title,
+                                    body = body,
+                                    audience = when (selectedAudience) {
+                                        "Campers" -> FeedPostAudience.campers
+                                        "Leaders" -> FeedPostAudience.leaders
+                                        "Admins" -> FeedPostAudience.admins
+                                        "Specific Tribe" -> FeedPostAudience.tribe
+                                        "Specific Group" -> FeedPostAudience.group
+                                        else -> FeedPostAudience.everyone
+                                    },
+                                    priority = when (selectedPostType) {
+                                        "Important" -> FeedPostPriority.important
+                                        "Urgent" -> FeedPostPriority.urgent
+                                        "Schedule" -> FeedPostPriority.schedule
+                                        "Link" -> FeedPostPriority.link
+                                        "Vote" -> FeedPostPriority.vote
+                                        else -> FeedPostPriority.normal
+                                    },
+                                    linkTitle = linkTitle.takeIf { it.isNotBlank() },
+                                    linkURL = url.takeIf { it.isNotBlank() },
+                                    targetTribeId = selectedTribeId,
+                                    targetGroupId = selectedGroupId,
+                                    updatedAt = Timestamp.now()
+                                ))
+                            }
+                        }
                         onNavigateBack()
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -294,45 +319,10 @@ fun CreateHomePostScreen(
                     shape = RoundedCornerShape(28.dp),
                     enabled = title.isNotBlank() && body.isNotBlank()
                 ) {
-                    Text(text = "CREATE POST", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
+                    Text(text = if (postId == null) "CREATE POST" else "SAVE CHANGES", fontWeight = FontWeight.Black, fontFamily = QuickSandFontFamily)
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
-
-                Text(
-                    text = "OPTIONAL",
-                    color = Color(0xFFEF4444),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    fontFamily = QuickSandFontFamily
-                )
-                Text(
-                    text = "IMAGES",
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = QuickSandFontFamily
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Surface(
-                    onClick = { /* Pick Image */ },
-                    color = Color.White.copy(0.05f),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth().height(120.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color.White.copy(0.4f), modifier = Modifier.size(32.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "ADD IMAGES", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(140.dp))
             }
         }
 

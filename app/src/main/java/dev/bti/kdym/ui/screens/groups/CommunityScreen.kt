@@ -265,29 +265,19 @@ fun CommunityScreen(
                                     onDismissRequest = { showMenu = false },
                                     modifier = Modifier.background(Color(0xFF1A1A1A))
                                 ) {
-                                    if (selectedTab == "GROUPS") {
-                                        if (user?.isAdmin == true) {
-                                            DropdownMenuItem(
-                                                text = { Text("Create Group", color = Color.White) },
-                                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                                                onClick = { showMenu = false; onCreateGroup() }
-                                            )
-                                        }
-
+                                    if (user?.isAdmin == true) {
                                         DropdownMenuItem(
-                                            text = { Text("Explore Groups", color = Color.White) },
-                                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
-                                            onClick = { showMenu = false; onExploreGroups() }
+                                            text = { Text("Create Group", color = Color.White) },
+                                            leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
+                                            onClick = { showMenu = false; onCreateGroup() }
                                         )
-                                    } else if (selectedTab == "TRIBE_WARS") {
-                                        if (isSuperAdminOrAllowedEmail) {
-                                            DropdownMenuItem(
-                                                text = { Text("Add Score", color = Color.White) },
-                                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                                                onClick = { showMenu = false; onAddScore(null) }
-                                            )
-                                        }
                                     }
+
+                                    DropdownMenuItem(
+                                        text = { Text("Explore Groups", color = Color.White) },
+                                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
+                                        onClick = { showMenu = false; onExploreGroups() }
+                                    )
                                 }
                             }
                         }
@@ -470,21 +460,31 @@ fun GroupsTab(
 
     val groups = remember(allGroups, adminOnly, user) {
         val uid = user?.uid ?: return@remember emptyList()
-        if (adminOnly) {
-            allGroups.filter { group ->
-                group.leaderIds.contains(uid) ||
-                        group.createdBy == uid ||
-                        group.memberIds.contains(uid) ||
-                        (group.type == AppGroupType.tribe && group.tribeId == user!!.tribeId)
-            }
+
+        val hasAdminRights = user!!.isAdmin
+        val effectiveAdminOnly = adminOnly && hasAdminRights
+
+        val calculatedGroups = if (effectiveAdminOnly) {
+            println("DEBUG: adminOnly is TRUE. Returning all ${allGroups.size} groups.")
+            allGroups
         } else {
             allGroups.filter { group ->
-                group.leaderIds.contains(uid) ||
-                        group.createdBy == uid ||
-                        group.memberIds.contains(uid) ||
-                        (group.type == AppGroupType.tribe && group.tribeId == user!!.tribeId)
+                val isLeader = group.leaderIds.contains(uid)
+                val isCreator = group.createdBy == uid
+                val isMember = group.memberIds.contains(uid)
+                val isMyTribe = group.type == AppGroupType.tribe && group.tribeId == user!!.tribeId
+
+                val shouldInclude = isLeader || isCreator || isMember || isMyTribe
+
+                if (shouldInclude) {
+                    println("DEBUG: Filter kept -> '${group.name}'")
+                }
+                shouldInclude
             }
         }
+
+        println("DEBUG: Final list size passed to UI: ${calculatedGroups.size}")
+        calculatedGroups
     }
 
     LazyColumn(

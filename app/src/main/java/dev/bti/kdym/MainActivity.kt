@@ -646,6 +646,17 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                     adminViewModel = adminViewModel
                 )
             }
+            composable(
+                route = "edit_home_post/{postId}",
+                arguments = listOf(navArgument("postId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
+                CreateHomePostScreen(
+                    postId = postId,
+                    onNavigateBack = { navController.popBackStack() },
+                    adminViewModel = adminViewModel
+                )
+            }
             composable("create_urgent_overlay") {
                 CreateUrgentOverlayScreen(
                     onNavigateBack = { navController.popBackStack() },
@@ -680,6 +691,7 @@ fun MainNavigation(mainViewModel: MainViewModel) {
                 CommentThreadScreen(
                     postId = postId,
                     onNavigateBack = { navController.popBackStack() },
+                    onNavigateToEditPost = { id -> navController.navigate("edit_home_post/$id") },
                     viewModel = mainViewModel
                 )
             }

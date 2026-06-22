@@ -64,11 +64,13 @@ class AdminViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val totalUserCount: StateFlow<Int> = allUsers
-        .map { it.size }
+        .map { users ->
+            users.count { !it.isDeleted }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val approvedUserCount: StateFlow<Int> = allUsers
-        .map { users -> users.count { it.accessStatus == "approved" } }
+        .map { users -> users.count { it.accessStatus == "approved" && !it.isDeleted } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** Tribes associated with the currently active camp. */
@@ -77,6 +79,11 @@ class AdminViewModel @Inject constructor(
             val campId = config?.activeCampId ?: "camp_2026"
             tribeRepository.getTribesForCamp(campId)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** All posts from the feed. */
+    val liveUpdates: StateFlow<List<FeedPost>> =
+        feedRepository.getLiveUpdates()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Competitive events for tribe wars. */
     val tribeEvents: StateFlow<List<TribeWarEvent>> =
@@ -275,6 +282,14 @@ class AdminViewModel @Inject constructor(
             feedRepository.createPost(post)
         } catch (e: Exception) {
             Log.e("AdminViewModel", "createHomePost failed", e)
+        }
+    }
+
+    fun updateHomePost(post: FeedPost) = viewModelScope.launch {
+        try {
+            feedRepository.updatePost(post)
+        } catch (e: Exception) {
+            Log.e("AdminViewModel", "updateHomePost failed", e)
         }
     }
 
